@@ -316,42 +316,115 @@ function SendSurprise() {
 function PersonButton({
   label,
   person,
+  presets,
   open,
   align = "left",
-  onClick,
+  onToggle,
+  onClose,
+  onPick,
 }: {
   label: string;
   person: Person;
+  presets: Person[];
   open: boolean;
   align?: "left" | "right";
-  onClick: () => void;
+  onToggle: () => void;
+  onClose: () => void;
+  onPick: (p: Person) => void;
 }) {
+  const box = useRef<HTMLDivElement>(null);
   const img = personImage(person.art);
+
+  // Tap somewhere else on the page – or press Escape – and the list closes again.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: PointerEvent) {
+      if (!box.current?.contains(e.target as Node)) onClose();
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-expanded={open}
-      aria-label={`${label}: ${person.name}. Tryk for at skifte person.`}
-      className={
-        "flex flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
-        (align === "right" ? "justify-self-end" : "justify-self-start") +
-        (open ? " bg-secondary" : "")
-      }
-    >
-      <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
-      <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
-        {img ? (
-          <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
-        ) : (
-          <span aria-hidden>{person.art}</span>
-        )}
-        <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <ChevronDown className="size-3.5" />
+    <div ref={box} className={"relative " + (align === "right" ? "justify-self-end" : "justify-self-start")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={`${label}: ${person.name}. Tryk for at skifte person.`}
+        className={
+          "flex flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
+          (open ? " bg-secondary" : "")
+        }
+      >
+        <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
+        <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
+          {img ? (
+            <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
+          ) : (
+            <span aria-hidden>{person.art}</span>
+          )}
+          <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <ChevronDown className="size-3.5" />
+          </span>
         </span>
-      </span>
-      <span className="max-w-24 truncate text-base font-bold">{person.name}</span>
-    </button>
+        <span className="max-w-24 truncate text-base font-bold">{person.name}</span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label={label === "FRA" ? "Vælg hvem gaven er fra" : "Vælg hvem gaven skal til"}
+          className={
+            "absolute top-full z-50 mt-2 max-h-72 w-60 overflow-y-auto rounded-3xl border border-primary/15 bg-card p-2 shadow-soft animate-rise " +
+            (align === "right" ? "right-0" : "left-0")
+          }
+        >
+          {presets.map((p) => {
+            const active = person.name === p.name && person.art === p.art;
+            const pimg = personImage(p.art);
+            return (
+              <button
+                key={p.name}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => onPick(p)}
+                className={
+                  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-lg font-bold transition-colors active:scale-[0.98] " +
+                  (active ? "bg-blush text-secondary-foreground" : "hover:bg-muted")
+                }
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xl">
+                  {pimg ? (
+                    <img
+                      src={pimg}
+                      alt=""
+                      width={816}
+                      height={816}
+                      loading="lazy"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span aria-hidden>{p.art}</span>
+                  )}
+                </span>
+                {p.name}
+                {active && <Check className="ml-auto size-5 shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
