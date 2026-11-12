@@ -32,7 +32,7 @@ const STEPS = [
 
 function Index() {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-12 pt-8">
+    <div className="mx-auto flex min-h-page w-full max-w-md flex-col px-5 pb-12 pt-8">
       <section className="flex flex-col items-center text-center">
         <img
           src={giftImage}
