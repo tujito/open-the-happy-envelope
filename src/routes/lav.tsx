@@ -482,7 +482,7 @@ function greetingSummary(g: GreetingDraft) {
 function ColumnTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-center text-base font-bold leading-tight text-foreground sm:text-lg">{children}</h2>;
 }
- { art: string; photo?: string | null | undefined; big?: boolean }) {
+function Avatar({ art, photo, big }: { art: string; photo?: string | null | undefined; big?: boolean }) {
   const img = photo ?? personImage(art);
   return (
     <span
