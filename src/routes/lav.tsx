@@ -495,7 +495,7 @@ function ColumnTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-center text-base font-bold leading-tight text-foreground sm:text-lg">{children}</h2>;
 }
 
-function Avatar({ art, photo }: { art: string; photo?: string | null }) {
+function Avatar({ art, photo }: { art: string; photo?: string | null | undefined }) {
   const img = photo ?? personImage(art);
   return (
     <span className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
@@ -519,7 +519,7 @@ function AvatarButton({
 }: {
   caption: string;
   art: string;
-  photo?: string | null;
+  photo?: string | null | undefined;
   name: string;
   expanded: boolean;
   ariaLabel: string;
