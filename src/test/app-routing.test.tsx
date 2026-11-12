@@ -15,3 +15,23 @@ describe("App routing", () => {
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
 });
+
+describe("Bottom menu", () => {
+  it("has the five buttons in the requested order", async () => {
+    const { NAV_ITEMS } = await import("@/components/tujito/nav-items");
+    expect(NAV_ITEMS.map((i) => i.label)).toEqual(["Børsen", "Send surprise", "My Net", "Send Tak", "My Feed"]);
+  });
+
+  it("Send surprise opens the page where you start a surprise", async () => {
+    const { NAV_ITEMS } = await import("@/components/tujito/nav-items");
+    expect(NAV_ITEMS.find((i) => i.label === "Send surprise")?.to).toBe("/lav");
+  });
+
+  it("every button leads to a real page", async () => {
+    const { NAV_ITEMS } = await import("@/components/tujito/nav-items");
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    for (const item of NAV_ITEMS) {
+      expect(router.matchRoutes(item.to).at(-1)?.routeId).toBe(item.to);
+    }
+  });
+});

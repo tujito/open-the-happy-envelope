@@ -10,7 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BorsenRouteImport } from './routes/borsen'
+import { Route as FeedRouteImport } from './routes/feed'
 import { Route as LavRouteImport } from './routes/lav'
+import { Route as MitNetRouteImport } from './routes/mit-net'
+import { Route as SendTakRouteImport } from './routes/send-tak'
 import { Route as MedIdRouteImport } from './routes/med.$id'
 import { Route as TilIdRouteImport } from './routes/til.$id'
 
@@ -19,9 +23,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BorsenRoute = BorsenRouteImport.update({
+  id: '/borsen',
+  path: '/borsen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LavRoute = LavRouteImport.update({
   id: '/lav',
   path: '/lav',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MitNetRoute = MitNetRouteImport.update({
+  id: '/mit-net',
+  path: '/mit-net',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SendTakRoute = SendTakRouteImport.update({
+  id: '/send-tak',
+  path: '/send-tak',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MedIdRoute = MedIdRouteImport.update({
@@ -37,34 +61,75 @@ const TilIdRoute = TilIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/borsen': typeof BorsenRoute
+  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
+  '/mit-net': typeof MitNetRoute
+  '/send-tak': typeof SendTakRoute
   '/med/$id': typeof MedIdRoute
   '/til/$id': typeof TilIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/borsen': typeof BorsenRoute
+  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
+  '/mit-net': typeof MitNetRoute
+  '/send-tak': typeof SendTakRoute
   '/med/$id': typeof MedIdRoute
   '/til/$id': typeof TilIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/borsen': typeof BorsenRoute
+  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
+  '/mit-net': typeof MitNetRoute
+  '/send-tak': typeof SendTakRoute
   '/med/$id': typeof MedIdRoute
   '/til/$id': typeof TilIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lav' | '/med/$id' | '/til/$id'
+  fullPaths:
+    | '/'
+    | '/borsen'
+    | '/feed'
+    | '/lav'
+    | '/mit-net'
+    | '/send-tak'
+    | '/med/$id'
+    | '/til/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lav' | '/med/$id' | '/til/$id'
-  id: '__root__' | '/' | '/lav' | '/med/$id' | '/til/$id'
+  to:
+    | '/'
+    | '/borsen'
+    | '/feed'
+    | '/lav'
+    | '/mit-net'
+    | '/send-tak'
+    | '/med/$id'
+    | '/til/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/borsen'
+    | '/feed'
+    | '/lav'
+    | '/mit-net'
+    | '/send-tak'
+    | '/med/$id'
+    | '/til/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BorsenRoute: typeof BorsenRoute
+  FeedRoute: typeof FeedRoute
   LavRoute: typeof LavRoute
+  MitNetRoute: typeof MitNetRoute
+  SendTakRoute: typeof SendTakRoute
   MedIdRoute: typeof MedIdRoute
   TilIdRoute: typeof TilIdRoute
 }
@@ -78,11 +143,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/borsen': {
+      id: '/borsen'
+      path: '/borsen'
+      fullPath: '/borsen'
+      preLoaderRoute: typeof BorsenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lav': {
       id: '/lav'
       path: '/lav'
       fullPath: '/lav'
       preLoaderRoute: typeof LavRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mit-net': {
+      id: '/mit-net'
+      path: '/mit-net'
+      fullPath: '/mit-net'
+      preLoaderRoute: typeof MitNetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/send-tak': {
+      id: '/send-tak'
+      path: '/send-tak'
+      fullPath: '/send-tak'
+      preLoaderRoute: typeof SendTakRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/med/$id': {
@@ -104,7 +197,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BorsenRoute: BorsenRoute,
+  FeedRoute: FeedRoute,
   LavRoute: LavRoute,
+  MitNetRoute: MitNetRoute,
+  SendTakRoute: SendTakRoute,
   MedIdRoute: MedIdRoute,
   TilIdRoute: TilIdRoute,
 }

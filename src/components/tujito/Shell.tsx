@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export function Shell({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-10 pt-5">
+    <div className="mx-auto flex min-h-page w-full max-w-md flex-col px-5 pb-10 pt-5">
       <header className="mb-4 flex items-center justify-center">
         <Link to="/" className="font-display text-2xl font-semibold text-gift" aria-label="Tujito – til forsiden">
           Tujito
