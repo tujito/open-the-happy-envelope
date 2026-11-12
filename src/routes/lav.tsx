@@ -390,63 +390,6 @@ function PersonButton({
   );
 }
 
-function PersonPicker({
-  title,
-  presets,
-  person,
-  onPick,
-  onName,
-  onDone,
-}: {
-  title: string;
-  presets: Person[];
-  person: Person;
-  onPick: (p: Person) => void;
-  onName: (name: string) => void;
-  onDone: () => void;
-}) {
-  return (
-    <section aria-label={title} className="mt-4 rounded-[2rem] border-2 border-primary/40 bg-card p-5 shadow-soft animate-rise">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {presets.map((p) => {
-          const active = person.name === p.name && person.art === p.art;
-          const img = personImage(p.art);
-          return (
-            <button
-              key={p.name}
-              type="button"
-              onClick={() => onPick(p)}
-              aria-pressed={active}
-              className={
-                "flex flex-col items-center gap-1 rounded-2xl border-2 p-3 transition-all active:scale-95 " +
-                (active ? "border-primary bg-blush" : "border-border bg-background hover:border-primary/50")
-              }
-            >
-              <span className="flex size-12 items-center justify-center overflow-hidden rounded-full bg-muted text-2xl">
-                {img ? <img src={img} alt="" width={816} height={816} loading="lazy" className="size-full object-cover" /> : <span aria-hidden>{p.art}</span>}
-              </span>
-              <span className="text-base font-bold">{p.name}</span>
-            </button>
-          );
-        })}
-      </div>
-      <FieldLabel htmlFor="person-custom-name">Eller skriv et navn</FieldLabel>
-      <Input
-        id="person-custom-name"
-        value={person.name}
-        onChange={(e) => onName(e.target.value)}
-        placeholder="Fx Bedste"
-        maxLength={60}
-        className={fieldClass}
-      />
-      <Button variant="gift" size="big" className="mt-4 w-full" onClick={onDone}>
-        <Check /> Sådan!
-      </Button>
-    </section>
-  );
-}
-
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="mb-2 mt-4 block text-lg font-bold first:mt-0">
