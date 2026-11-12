@@ -14,7 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      tujito_greetings: {
+        Row: {
+          created_at: string
+          from_name: string | null
+          id: string
+          kind: string
+          media_path: string | null
+          message: string | null
+          tujito_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_name?: string | null
+          id?: string
+          kind?: string
+          media_path?: string | null
+          message?: string | null
+          tujito_id: string
+        }
+        Update: {
+          created_at?: string
+          from_name?: string | null
+          id?: string
+          kind?: string
+          media_path?: string | null
+          message?: string | null
+          tujito_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tujito_greetings_tujito_id_fkey"
+            columns: ["tujito_id"]
+            isOneToOne: false
+            referencedRelation: "tujitos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tujitos: {
+        Row: {
+          created_at: string
+          id: string
+          occasion: string
+          opened_at: string | null
+          recipient_name: string
+          recipient_phone: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          occasion: string
+          opened_at?: string | null
+          recipient_name: string
+          recipient_phone?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          occasion?: string
+          opened_at?: string | null
+          recipient_name?: string
+          recipient_phone?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
