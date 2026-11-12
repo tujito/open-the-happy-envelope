@@ -5,6 +5,10 @@ export const OCCASIONS = [
   { id: "tak", label: "Tak", emoji: "💐", headline: "Tusind tak!" },
   { id: "opmuntring", label: "Opmuntring", emoji: "🌻", headline: "Du kan godt!" },
   { id: "bare-fordi", label: "Bare fordi", emoji: "💛", headline: "Bare fordi du er dig" },
+  { id: "knus", label: "Et uventet knus", emoji: "🤗", headline: "Et stort knus til dig!" },
+  { id: "varm-hilsen", label: "En varm hilsen", emoji: "💌", headline: "En varm hilsen til dig!" },
+  { id: "sang", label: "En sang", emoji: "🎵", headline: "En sang til dig!" },
+  { id: "minde", label: "Et minde", emoji: "📸", headline: "Et minde til dig!" },
 ] as const;
 
 export type OccasionId = (typeof OCCASIONS)[number]["id"];
