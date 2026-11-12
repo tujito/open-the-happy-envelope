@@ -13,21 +13,40 @@ export type SurpriseTemplate = {
 
 export const SURPRISE_TEMPLATES: SurpriseTemplate[] = [
   {
+    id: "morfar",
+    title: "Morfar til barnebarn",
+    emoji: "👴🏻",
+    kind: "text",
+    message: "Din morfar tænker på dig og sender dig en lille overraskelse.",
+  },
+  {
+    id: "moster",
+    title: "Moster til nevø",
+    emoji: "👩🏻",
+    kind: "text",
+    message: "Din moster sender dig en varm hilsen – bare fordi du er dig.",
+  },
+  {
+    id: "bedstemor",
+    title: "Bedstemor til barnebarn",
+    emoji: "👵🏻",
+    kind: "text",
+    message: "Din bedstemor holder så meget af dig og vil gerne overraske dig.",
+  },
+  {
+    id: "ven",
+    title: "Ven til ven",
+    emoji: "🫶",
+    kind: "text",
+    message: "En ven tænker på dig i dag og sender dig noget sødt.",
+  },
+  {
     id: "knus",
     title: "Giv jeres barnebarn et uventet knus",
     emoji: "🤗",
     kind: "text",
     message: "Et stort, varmt knus til dig – bare fordi vi holder så meget af dig.",
   },
-  {
-    id: "varm-hilsen",
-    title: "Send en varm hilsen",
-    emoji: "💌",
-    kind: "text",
-    message: "Vi tænker på dig og sender dig en masse varme tanker i dag.",
-  },
-  { id: "sang", title: "Send en sang", emoji: "🎵", kind: "audio", message: "" },
-  { id: "minde", title: "Send et minde", emoji: "📸", kind: "text", message: "Kan du huske, da vi…" },
 ];
 
 export function getTemplate(id: string | null) {

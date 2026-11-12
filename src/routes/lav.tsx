@@ -1,8 +1,10 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { Check, Copy, Heart, MessageCircle, Send, Share2, UserPlus, UserRound, Users, X } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Check, ChevronDown, Copy, Heart, MessageCircle, Send, Share2, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import avatarBarnebarn from "@/assets/avatar-barnebarn.png";
+import avatarBedstemor from "@/assets/avatar-bedstemor.png";
 import giftImage from "@/assets/tujito-gift.png";
 import { Shell } from "@/components/tujito/Shell";
 import { GreetingComposer, emptyGreeting, type GreetingDraft } from "@/components/tujito/GreetingComposer";
@@ -24,9 +26,9 @@ export const Route = createFileRoute("/lav")({
   head: () => ({
     meta: [
       { title: "Send surprise – Tujito" },
-      { name: "description", content: "Vælg hvem I er, hvilken overraskelse I vil give, og hvem den skal til." },
+      { name: "description", content: "Vælg hvem gaven er fra, hvilken overraskelse I vil give, og hvem den skal til." },
       { property: "og:title", content: "Send surprise – Tujito" },
-      { property: "og:description", content: "Vælg hvem I er, hvilken overraskelse I vil give, og hvem den skal til." },
+      { property: "og:description", content: "Vælg hvem gaven er fra, hvilken overraskelse I vil give, og hvem den skal til." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -34,33 +36,66 @@ export const Route = createFileRoute("/lav")({
   component: SendSurprise,
 });
 
-const MY_NAME_KEY = "tujito-mit-navn";
+const MY_PERSON_KEY = "tujito-mit-person";
 const fieldClass =
   "h-14 rounded-2xl border-2 bg-background px-4 text-xl md:text-xl shadow-none focus-visible:ring-2";
 
-type CoSender = { key: number; name: string };
+/** art: "bedstemor" | "barnebarn" use the drawn portraits; anything else is an emoji. */
+type Person = { name: string; art: string };
+
+const FROM_PRESETS: Person[] = [
+  { name: "Bedstemor", art: "bedstemor" },
+  { name: "Morfar", art: "👴🏻" },
+  { name: "Mormor", art: "👵🏻" },
+  { name: "Moster", art: "👩🏻" },
+  { name: "Onkel", art: "🧔🏻" },
+  { name: "Ven", art: "🫶" },
+];
+
+const TO_PRESETS: Person[] = [
+  { name: "Barnebarn", art: "barnebarn" },
+  { name: "Nevø", art: "👦🏻" },
+  { name: "Niece", art: "👧🏻" },
+  { name: "Ven", art: "🫶" },
+];
+
+function personImage(art: string) {
+  if (art === "bedstemor") return avatarBedstemor;
+  if (art === "barnebarn") return avatarBarnebarn;
+  return null;
+}
 
 function SendSurprise() {
-  const [senderName, setSenderName] = useState("");
-  const [coSenders, setCoSenders] = useState<CoSender[]>([]);
+  const [from, setFrom] = useState<Person>(FROM_PRESETS[0]!);
+  const [to, setTo] = useState<Person>(TO_PRESETS[0]!);
+  const [picker, setPicker] = useState<"from" | "to" | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<GreetingDraft>(emptyGreeting);
-  const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
   const [triedSend, setTriedSend] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<{ id: string; name: string; phone: string; helpers: string[] } | null>(null);
+  const [sent, setSent] = useState<{ id: string; name: string; phone: string } | null>(null);
 
-  // Remember your own name on this phone, so you only type it once.
+  // Remember who you are on this phone, so you only choose once.
   useEffect(() => {
-    const saved = window.localStorage.getItem(MY_NAME_KEY);
-    if (saved) setSenderName(saved);
+    try {
+      const saved = window.localStorage.getItem(MY_PERSON_KEY);
+      if (saved) setFrom(JSON.parse(saved) as Person);
+    } catch {
+      // old or broken value – keep the default
+    }
   }, []);
   useEffect(() => {
-    if (senderName.trim()) window.localStorage.setItem(MY_NAME_KEY, senderName.trim());
-  }, [senderName]);
+    if (from.name.trim()) window.localStorage.setItem(MY_PERSON_KEY, JSON.stringify(from));
+  }, [from]);
 
-  const form = { senderName, templateId, greeting, recipientName, recipientPhone };
+  const form = {
+    senderName: from.name,
+    templateId,
+    greeting,
+    recipientName: to.name,
+    recipientPhone,
+  };
   const filled = columnsFilled(form);
   const ready = canSendSurprise(form);
   const template = getTemplate(templateId);
@@ -84,18 +119,13 @@ function SendSurprise() {
       const prepared = await prepareGreeting(greeting);
       const { id } = await createTujito({
         data: {
-          recipientName: recipientName.trim(),
+          recipientName: to.name.trim(),
           recipientPhone: recipientPhone.trim(),
           occasion: template.id,
           greeting: prepared,
         },
       });
-      setSent({
-        id,
-        name: recipientName.trim().split(" ")[0] ?? "",
-        phone: recipientPhone,
-        helpers: coSenders.map((c) => c.name.trim()).filter(Boolean),
-      });
+      setSent({ id, name: to.name.trim(), phone: recipientPhone });
     } catch {
       toast.error("Ups, det lykkedes ikke at sende. Prøv igen om lidt.");
     } finally {
@@ -103,180 +133,139 @@ function SendSurprise() {
     }
   }
 
-  if (sent) return <Sent {...sent} />;
+  if (sent) return <Sent {...sent} helpers={[]} />;
 
   return (
-    <div className="mx-auto flex min-h-page w-full max-w-6xl flex-col px-4 pb-10 pt-5 sm:px-6">
-      <header className="mb-6 text-center animate-rise">
-        <Link to="/" className="font-display text-2xl font-semibold text-gift" aria-label="Tujito – til forsiden">
-          Tujito
-        </Link>
-        <h1 className="mt-3 text-4xl font-semibold sm:text-5xl">Send surprise</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Tre små trin – så er gaven pakket ind.</p>
-      </header>
-
-      <div className="grid items-start gap-5 lg:grid-cols-3">
-        {/* 1 – Fra og med */}
-        <Column n={1} title="Fra og med" done={filled.from} delay={0.05}>
-          <PersonRow
-            label="Dig"
-            avatar={<Avatar name={senderName} tone="gift" icon={<UserRound className="size-7" />} />}
-          >
-            <Input
-              id="sender-name"
-              aria-label="Dit navn"
-              value={senderName}
-              onChange={(e) => setSenderName(e.target.value)}
-              placeholder="Fx Morfar"
-              autoComplete="given-name"
-              maxLength={60}
-              className={fieldClass}
-            />
-          </PersonRow>
-          {triedSend && !filled.from && <Hint>Skriv dit eget navn.</Hint>}
-
-          {coSenders.length > 0 && (
-            <p className="mt-6 text-base font-bold text-muted-foreground">Sammen med</p>
-          )}
-          <div className="mt-2 flex flex-col gap-4">
-            {coSenders.map((c, i) => (
-              <PersonRow
-                key={c.key}
-                label="Medsender"
-                avatar={<Avatar name={c.name} tone="peach" icon={<Users className="size-6" />} />}
-              >
-                <div className="flex items-center gap-2">
-                  <Input
-                    aria-label={`Navn på medsender ${i + 1}`}
-                    value={c.name}
-                    autoFocus={!c.name}
-                    onChange={(e) =>
-                      setCoSenders((list) => list.map((x) => (x.key === c.key ? { ...x, name: e.target.value } : x)))
-                    }
-                    placeholder="Fx Mormor"
-                    maxLength={60}
-                    className={fieldClass}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setCoSenders((list) => list.filter((x) => x.key !== c.key))}
-                    aria-label="Fjern medsender"
-                    className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground active:scale-95"
-                  >
-                    <X className="size-6" />
-                  </button>
-                </div>
-              </PersonRow>
-            ))}
-          </div>
-          <Button
-            variant="soft"
-            size="big"
-            className="mt-4 w-full border-dashed"
-            onClick={() => setCoSenders((list) => [...list, { key: Date.now(), name: "" }])}
-          >
-            <UserPlus /> Tilføj medsender
-          </Button>
-        </Column>
-
-        {/* 2 – Vælg overraskelse */}
-        <Column n={2} title="Vælg overraskelse" done={filled.surprise} delay={0.12}>
-          <div role="radiogroup" aria-label="Vælg overraskelse" className="grid gap-3">
-            {SURPRISE_TEMPLATES.map((t) => {
-              const active = templateId === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => chooseTemplate(t.id)}
-                  className={
-                    "relative flex min-h-24 items-center gap-4 rounded-3xl border-2 p-4 pr-12 text-left text-xl font-bold leading-snug transition-all active:scale-[0.98] " +
-                    (active
-                      ? "border-primary bg-blush text-secondary-foreground shadow-gift"
-                      : "border-border bg-background text-foreground hover:border-primary/50")
-                  }
-                >
-                  <span
-                    aria-hidden
-                    className={
-                      "flex size-14 shrink-0 items-center justify-center rounded-2xl text-3xl " +
-                      (active ? "bg-card" : "bg-muted")
-                    }
-                  >
-                    {t.emoji}
-                  </span>
-                  {t.title}
-                  {active && (
-                    <span className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
-                      <Check className="size-5" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {triedSend && !template && <Hint>Tryk på en af overraskelserne.</Hint>}
-
-          {template && (
-            <div className="mt-6 border-t-2 border-dashed border-border pt-5 animate-rise">
-              <p className="mb-3 text-lg font-bold">Gør den personlig</p>
-              <GreetingComposer value={greeting} onChange={setGreeting} recipientName={recipientName.trim()} />
-              {triedSend && !filled.surprise && (
-                <Hint>
-                  {greeting.kind === "text"
-                    ? "Skriv et par ord i feltet."
-                    : greeting.kind === "video"
-                      ? "Vælg en video først."
-                      : "Optag din lyd-hilsen først."}
-                </Hint>
-              )}
-            </div>
-          )}
-        </Column>
-
-        {/* 3 – Til */}
-        <Column n={3} title="Til" done={filled.to} delay={0.19}>
-          <div className="flex flex-col items-center text-center">
-            <Avatar name={recipientName} tone="blush" size="lg" icon={<Heart className="size-10" />} />
-            <p className="mt-3 min-h-8 font-display text-2xl font-semibold">
-              {recipientName.trim() || "Barnebarn"}
-            </p>
-          </div>
-          <div className="mt-5 flex flex-col gap-5">
-            <div>
-              <FieldLabel htmlFor="recipient-name">Navn</FieldLabel>
-              <Input
-                id="recipient-name"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                placeholder="Fx Barnebarn"
-                autoComplete="off"
-                maxLength={80}
-                className={fieldClass}
-              />
-              {triedSend && !recipientName.trim() && <Hint>Skriv hvem gaven er til.</Hint>}
-            </div>
-            <div>
-              <FieldLabel htmlFor="recipient-phone">Telefon- eller SMS-nummer</FieldLabel>
-              <Input
-                id="recipient-phone"
-                type="tel"
-                inputMode="tel"
-                value={recipientPhone}
-                onChange={(e) => setRecipientPhone(e.target.value)}
-                placeholder="12 34 56 78"
-                autoComplete="off"
-                maxLength={30}
-                className={fieldClass}
-              />
-              {triedSend && recipientName.trim() && !filled.to && <Hint>Skriv et nummer med 8 cifre.</Hint>}
-            </div>
-          </div>
-        </Column>
+    <div className="mx-auto flex min-h-page w-full max-w-2xl flex-col px-4 pb-10 sm:px-6">
+      {/* Fast top-bar: FRA – Tujito? – TIL */}
+      <div className="sticky top-0 z-40 -mx-4 rounded-b-[1.75rem] bg-nav px-4 pb-3 pt-3 shadow-soft sm:-mx-6 sm:px-6">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start">
+          <PersonButton
+            label="FRA"
+            person={from}
+            open={picker === "from"}
+            onClick={() => setPicker(picker === "from" ? null : "from")}
+          />
+          <p className="pt-6 text-center font-display text-4xl font-semibold text-gift">Tujito?</p>
+          <PersonButton
+            label="TIL"
+            person={to}
+            align="right"
+            open={picker === "to"}
+            onClick={() => setPicker(picker === "to" ? null : "to")}
+          />
+        </div>
       </div>
 
+      {/* Person-vælger */}
+      {picker && (
+        <PersonPicker
+          key={picker}
+          title={picker === "from" ? "Hvem er gaven fra?" : "Hvem skal have gaven?"}
+          presets={picker === "from" ? FROM_PRESETS : TO_PRESETS}
+          person={picker === "from" ? from : to}
+          onPick={(p) => {
+            if (picker === "from") setFrom(p);
+            else setTo(p);
+          }}
+          onName={(name) => {
+            if (picker === "from") setFrom({ ...from, name });
+            else setTo({ ...to, name });
+          }}
+          onDone={() => setPicker(null)}
+        />
+      )}
+
+      {/* Skabeloner – vandret scroll */}
+      <section aria-label="Vælg overraskelse" className="mt-5">
+        <h1 className="text-2xl font-semibold">Vælg overraskelse</h1>
+        <div
+          role="radiogroup"
+          aria-label="Skabeloner"
+          className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6"
+        >
+          {SURPRISE_TEMPLATES.map((t) => {
+            const active = templateId === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => chooseTemplate(t.id)}
+                className={
+                  "relative flex w-44 shrink-0 snap-start flex-col items-start gap-2 rounded-3xl border-2 p-4 text-left transition-all active:scale-[0.97] " +
+                  (active
+                    ? "border-primary bg-blush text-secondary-foreground shadow-gift"
+                    : "border-border bg-card text-foreground hover:border-primary/50")
+                }
+              >
+                <span
+                  aria-hidden
+                  className={
+                    "flex size-12 items-center justify-center rounded-2xl text-2xl " +
+                    (active ? "bg-card" : "bg-muted")
+                  }
+                >
+                  {t.emoji}
+                </span>
+                <span className="text-lg font-bold leading-snug">{t.title}</span>
+                {active && (
+                  <span className="absolute right-2.5 top-2.5 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
+                    <Check className="size-4" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {triedSend && !template && <Hint>Tryk på en af overraskelserne.</Hint>}
+      </section>
+
+      {/* Den valgte skabelon – vist stort */}
+      {template && (
+        <section aria-label="Din overraskelse" className="mt-5 rounded-[2rem] border-2 border-primary/50 bg-card p-6 text-center shadow-soft animate-rise">
+          <span aria-hidden className="text-6xl">
+            {template.emoji}
+          </span>
+          <h2 className="mt-2 text-3xl font-semibold">{template.title}</h2>
+          <p className="mt-1 text-lg text-muted-foreground">
+            Fra {from.name} til {to.name}
+          </p>
+          <div className="mt-5 border-t-2 border-dashed border-border pt-5 text-left">
+            <p className="mb-3 text-lg font-bold">Gør den personlig</p>
+            <GreetingComposer value={greeting} onChange={setGreeting} recipientName={to.name.trim()} />
+            {triedSend && !filled.surprise && (
+              <Hint>
+                {greeting.kind === "text"
+                  ? "Skriv et par ord i feltet."
+                  : greeting.kind === "video"
+                    ? "Vælg en video først."
+                    : "Optag din lyd-hilsen først."}
+              </Hint>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Telefonnummer */}
+      <section aria-label="Telefonnummer" className="mt-5 rounded-[2rem] border-2 border-border bg-card p-5 shadow-soft">
+        <FieldLabel htmlFor="recipient-phone">{to.name}s telefon- eller SMS-nummer</FieldLabel>
+        <Input
+          id="recipient-phone"
+          type="tel"
+          inputMode="tel"
+          value={recipientPhone}
+          onChange={(e) => setRecipientPhone(e.target.value)}
+          placeholder="12 34 56 78"
+          autoComplete="off"
+          maxLength={30}
+          className={fieldClass}
+        />
+        {triedSend && !filled.to && <Hint>Skriv et nummer med 8 cifre.</Hint>}
+      </section>
+
+      {/* Send-knap */}
       <div className="mx-auto mt-8 w-full max-w-md">
         <Button
           variant={ready ? "gift" : "soft"}
@@ -284,7 +273,10 @@ function SendSurprise() {
           onClick={send}
           disabled={sending}
           aria-disabled={!ready}
-          className={"h-20 text-2xl " + (ready ? "" : "border-transparent bg-muted text-muted-foreground shadow-none hover:border-transparent")}
+          className={
+            "h-20 text-2xl " +
+            (ready ? "" : "border-transparent bg-muted text-muted-foreground shadow-none hover:border-transparent")
+          }
         >
           {sending ? (
             "Sender…"
@@ -297,101 +289,115 @@ function SendSurprise() {
         <p className="mt-3 text-center text-base text-muted-foreground">
           {ready
             ? "Alt er klar! Bagefter får du et link, du kan sende."
-            : "Udfyld de tre felter ovenfor, så bliver knappen lyserød."}
+            : "Vælg en overraskelse og skriv nummeret, så bliver knappen lyserød."}
         </p>
       </div>
     </div>
   );
 }
 
-function Column({
-  n,
-  title,
-  done,
-  delay,
-  children,
+function PersonButton({
+  label,
+  person,
+  open,
+  align = "left",
+  onClick,
 }: {
-  n: number;
-  title: string;
-  done: boolean;
-  delay: number;
-  children: ReactNode;
+  label: string;
+  person: Person;
+  open: boolean;
+  align?: "left" | "right";
+  onClick: () => void;
 }) {
+  const img = personImage(person.art);
   return (
-    <section
-      aria-labelledby={`col-${n}`}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-label={`${label}: ${person.name}. Tryk for at skifte person.`}
       className={
-        "rounded-[2rem] border-2 bg-card p-5 shadow-soft transition-colors animate-rise " +
-        (done ? "border-primary/50" : "border-border")
+        "flex flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
+        (align === "right" ? "justify-self-end" : "justify-self-start") +
+        (open ? " bg-secondary" : "")
       }
-      style={{ animationDelay: `${delay}s` }}
     >
-      <div className="mb-5 flex items-center gap-3">
-        <span
-          className={
-            "flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-bold transition-colors " +
-            (done ? "bg-gift text-primary-foreground" : "bg-muted text-muted-foreground")
-          }
-          aria-hidden
-        >
-          {done ? <Check className="size-5" /> : n}
+      <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
+      <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
+        {img ? (
+          <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
+        ) : (
+          <span aria-hidden>{person.art}</span>
+        )}
+        <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <ChevronDown className="size-3.5" />
         </span>
-        <h2 id={`col-${n}`} className="text-2xl font-semibold">
-          {title}
-        </h2>
-      </div>
-      {children}
-    </section>
+      </span>
+      <span className="max-w-24 truncate text-base font-bold">{person.name}</span>
+    </button>
   );
 }
 
-function Avatar({
-  name,
-  tone,
-  icon,
-  size = "md",
+function PersonPicker({
+  title,
+  presets,
+  person,
+  onPick,
+  onName,
+  onDone,
 }: {
-  name: string;
-  tone: "gift" | "peach" | "blush";
-  icon: ReactNode;
-  size?: "md" | "lg";
+  title: string;
+  presets: Person[];
+  person: Person;
+  onPick: (p: Person) => void;
+  onName: (name: string) => void;
+  onDone: () => void;
 }) {
-  const initial = name.trim().charAt(0).toUpperCase();
-  const toneClass =
-    tone === "gift"
-      ? "bg-gift text-primary-foreground shadow-gift"
-      : tone === "peach"
-        ? "bg-peach text-accent-foreground"
-        : "bg-blush text-secondary-foreground";
   return (
-    <span
-      aria-hidden
-      className={
-        "flex shrink-0 items-center justify-center rounded-full font-display font-semibold " +
-        toneClass +
-        (size === "lg" ? " size-24 text-4xl" : " size-14 text-2xl")
-      }
-    >
-      {initial || icon}
-    </span>
-  );
-}
-
-function PersonRow({ label, avatar, children }: { label: string; avatar: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex flex-col items-center gap-1">
-        {avatar}
-        <span className="text-sm font-bold text-muted-foreground">{label}</span>
+    <section aria-label={title} className="mt-4 rounded-[2rem] border-2 border-primary/40 bg-card p-5 shadow-soft animate-rise">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {presets.map((p) => {
+          const active = person.name === p.name && person.art === p.art;
+          const img = personImage(p.art);
+          return (
+            <button
+              key={p.name}
+              type="button"
+              onClick={() => onPick(p)}
+              aria-pressed={active}
+              className={
+                "flex flex-col items-center gap-1 rounded-2xl border-2 p-3 transition-all active:scale-95 " +
+                (active ? "border-primary bg-blush" : "border-border bg-background hover:border-primary/50")
+              }
+            >
+              <span className="flex size-12 items-center justify-center overflow-hidden rounded-full bg-muted text-2xl">
+                {img ? <img src={img} alt="" width={816} height={816} loading="lazy" className="size-full object-cover" /> : <span aria-hidden>{p.art}</span>}
+              </span>
+              <span className="text-base font-bold">{p.name}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      <FieldLabel htmlFor="person-custom-name">Eller skriv et navn</FieldLabel>
+      <Input
+        id="person-custom-name"
+        value={person.name}
+        onChange={(e) => onName(e.target.value)}
+        placeholder="Fx Bedste"
+        maxLength={60}
+        className={fieldClass}
+      />
+      <Button variant="gift" size="big" className="mt-4 w-full" onClick={onDone}>
+        <Check /> Sådan!
+      </Button>
+    </section>
   );
 }
 
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="mb-2 block text-lg font-bold">
+    <label htmlFor={htmlFor} className="mb-2 mt-4 block text-lg font-bold first:mt-0">
       {children}
     </label>
   );
@@ -434,7 +440,7 @@ function Sent({ id, name, phone, helpers }: { id: string; name: string; phone: s
         <img src={giftImage} alt="" width={1024} height={1024} className="mx-auto w-44 animate-float" />
         <h1 className="mt-2 text-5xl font-semibold text-gift animate-rise">Hurra!</h1>
         <p className="mt-3 text-xl animate-rise" style={{ animationDelay: "0.1s" }}>
-          Jeres surprise til <strong>{name}</strong> er pakket ind. Nu skal {name} bare have den.
+          Din surprise til <strong>{name}</strong> er pakket ind. Nu skal {name} bare have den.
         </p>
       </section>
 

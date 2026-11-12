@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { SURPRISE_TEMPLATES, canSendSurprise, greetingFromTemplate, type SurpriseForm } from "@/lib/send-surprise";
 
-const hug = SURPRISE_TEMPLATES[0]!;
+const hug = SURPRISE_TEMPLATES.find((t) => t.id === "knus")!;
 const complete: SurpriseForm = {
-  senderName: "Morfar",
+  senderName: "Bedstemor",
   templateId: hug.id,
   greeting: greetingFromTemplate(hug),
   recipientName: "Barnebarn",
@@ -12,16 +12,17 @@ const complete: SurpriseForm = {
 };
 
 describe("Send surprise", () => {
-  it("offers the four requested surprise cards in order", () => {
+  it("offers the five requested surprise cards in order", () => {
     expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual([
+      "Morfar til barnebarn",
+      "Moster til nevø",
+      "Bedstemor til barnebarn",
+      "Ven til ven",
       "Giv jeres barnebarn et uventet knus",
-      "Send en varm hilsen",
-      "Send en sang",
-      "Send et minde",
     ]);
   });
 
-  it("the button is active when all three columns are filled", () => {
+  it("the button is active when all three parts are filled", () => {
     expect(canSendSurprise(complete)).toBe(true);
   });
 
