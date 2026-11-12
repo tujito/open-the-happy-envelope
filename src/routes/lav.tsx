@@ -284,7 +284,7 @@ function SendSurprise() {
           onClick={send}
           disabled={sending}
           aria-disabled={!ready}
-          className={"h-20 text-2xl " + (ready ? "" : "border-transparent bg-muted text-muted-foreground shadow-none")}
+          className={"h-20 text-2xl " + (ready ? "" : "border-transparent bg-muted text-muted-foreground shadow-none hover:border-transparent")}
         >
           {sending ? (
             "Sender…"
