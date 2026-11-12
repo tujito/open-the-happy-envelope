@@ -33,3 +33,4 @@ use the editor.
 
 - Tujito data (`tujitos`, `tujito_greetings`) has RLS on with no policies; all reads/writes go through server functions in `src/lib/tujito.functions.ts` using the admin client. Why: there are no accounts, so possession of the link (an unguessable id) is the only access check, and the phone number must never reach the browser.
 - Video/voice files live in the private `tujito-media` bucket under `uploads/<uuid>.<ext>`; the browser uploads via server-issued signed upload URLs and recipients get signed read URLs. Why: no public bucket and no storage policies needed.
+- The fixed bottom menu is rendered once in `src/routes/__root.tsx`; its buttons live in `src/components/tujito/nav-items.ts`, and page wrappers use the `min-h-page` utility instead of `min-h-dvh`. Why: the root reserves space with `pb-bottom-nav`, so a full-height page would otherwise always scroll under the menu.
