@@ -17,6 +17,16 @@ const greetingSchema = z
 
 const idSchema = z.object({ id: z.string().uuid() });
 
+/** Signed links must point at the address the visitor's browser can reach. */
+function toBrowserUrl(url: string) {
+  const serverBase = process.env["SUPABASE_URL"]?.replace(/\/+$/, "");
+  const publicBase = (process.env["VITE_SUPABASE_URL"] ?? import.meta.env.VITE_SUPABASE_URL)?.replace(/\/+$/, "");
+  if (serverBase && publicBase && serverBase !== publicBase && url.startsWith(serverBase)) {
+    return publicBase + url.slice(serverBase.length);
+  }
+  return url;
+}
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -137,7 +147,7 @@ export const openTujito = createServerFn({ method: "POST" })
           const { data: signed } = await db.storage
             .from(BUCKET)
             .createSignedUrl(g.media_path, 60 * 60 * 24);
-          mediaUrl = signed?.signedUrl ?? null;
+          mediaUrl = signed?.signedUrl ? toBrowserUrl(signed.signedUrl) : null;
         }
         return {
           id: g.id,
