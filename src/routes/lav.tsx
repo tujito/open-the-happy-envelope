@@ -49,7 +49,7 @@ const fieldClass =
   "h-14 rounded-2xl border-2 bg-background px-4 text-xl md:text-xl shadow-none focus-visible:ring-2";
 
 type Me = { nick: string; photo: string | null };
-type Panel = "top-from" | "top-to" | "col-from" | "me" | "co" | "col-to" | null;
+type Panel = "top-from" | "top-to" | "me" | "co" | "col-to" | null;
 
 function personImage(art: string) {
   if (art === "bedstemor") return avatarBedstemor;
@@ -213,35 +213,10 @@ function SendSurprise() {
         </div>
       </div>
 
-      {/* 3 kolonner: Fra og med – Overraskelse – Til */}
+      {/* 3 kolonner: Dig – Overraskelse – Tilføj modtager */}
       <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-        {/* Venstre: Fra og med */}
-        <section aria-label="Fra og med" className={columnClass}>
-          <ColumnTitle>Fra og med</ColumnTitle>
-
-          <Dropdown open={panel === "col-from"} onClose={close}>
-            <AvatarButton
-              caption="AFSENDER"
-              art={from.art}
-              name={from.name}
-              expanded={panel === "col-from"}
-              ariaLabel={`Afsender: ${from.name}. Tryk for at skifte.`}
-              onClick={() => toggle("col-from")}
-            />
-            {panel === "col-from" && (
-              <PanelBox label="Vælg hvem gaven er fra">
-                <PeopleList
-                  people={FROM_PEOPLE}
-                  selected={from}
-                  onPick={(p) => {
-                    setFrom(p);
-                    close();
-                  }}
-                />
-              </PanelBox>
-            )}
-          </Dropdown>
-
+        {/* Venstre: dig selv og medsendere */}
+        <section aria-label="Dig og medsendere" className={columnClass}>
           <Dropdown open={panel === "me"} onClose={close}>
             <AvatarButton
               caption="DIG"
