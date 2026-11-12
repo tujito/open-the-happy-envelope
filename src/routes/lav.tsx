@@ -467,7 +467,11 @@ function SendSurprise() {
 }
 
 const columnClass =
-  "flex min-w-0 flex-col items-center gap-3 rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-3 shadow-soft";
+  "flex min-w-0 flex-col items-center rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-3 shadow-soft";
+
+/** Fixed-height slots so every icon in the 3 columns lands on the same lines. */
+const headSlot = "flex h-8 w-full items-center justify-center";
+const labelSlot = "flex h-10 w-full items-center justify-center px-1 text-center leading-tight";
 
 function greetingSummary(g: GreetingDraft) {
   if (g.kind === "video") return g.file ? "🎬 Din video er klar" : "Vælg en video";
@@ -478,11 +482,15 @@ function greetingSummary(g: GreetingDraft) {
 function ColumnTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-center text-base font-bold leading-tight text-foreground sm:text-lg">{children}</h2>;
 }
-
-function Avatar({ art, photo }: { art: string; photo?: string | null | undefined }) {
+ { art: string; photo?: string | null | undefined; big?: boolean }) {
   const img = photo ?? personImage(art);
   return (
-    <span className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
+    <span
+      className={
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush shadow-soft " +
+        (big ? "size-16 text-3xl" : "size-12 text-2xl")
+      }
+    >
       {img ? (
         <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
       ) : (
@@ -493,7 +501,6 @@ function Avatar({ art, photo }: { art: string; photo?: string | null | undefined
 }
 
 function AvatarButton({
-  caption,
   art,
   photo,
   name,
@@ -501,7 +508,6 @@ function AvatarButton({
   ariaLabel,
   onClick,
 }: {
-  caption: string;
   art: string;
   photo?: string | null | undefined;
   name: string;
@@ -517,18 +523,53 @@ function AvatarButton({
       aria-haspopup="dialog"
       aria-label={ariaLabel}
       className={
-        "flex max-w-full flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
+        "flex w-full flex-col items-center gap-1 rounded-2xl transition-colors active:scale-95 " +
         (expanded ? "bg-secondary" : "")
       }
     >
-      <span className="text-xs font-bold tracking-widest text-muted-foreground">{caption}</span>
       <span className="relative">
         <Avatar art={art} photo={photo} />
-        <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <ChevronDown className="size-3.5" />
+        <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <ChevronDown className="size-3" />
         </span>
       </span>
-      <span className="max-w-full truncate text-base font-bold">{name}</span>
+      <span className={labelSlot + " text-base font-bold"}>{name}</span>
+    </button>
+  );
+}
+
+/** The round plus-icon button used for adding a co-sender and a recipient. */
+function PlusButton({
+  label,
+  expanded,
+  filled,
+  ariaLabel,
+  onClick,
+}: {
+  label: string;
+  expanded: boolean;
+  filled?: boolean;
+  ariaLabel: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={expanded}
+      aria-haspopup="dialog"
+      aria-label={ariaLabel}
+      className="flex w-full flex-col items-center gap-1 rounded-2xl transition-colors active:scale-95"
+    >
+      <span
+        className={
+          "flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-dashed bg-background transition-colors " +
+          (filled ? "border-primary bg-blush text-primary" : "border-primary/60 text-primary")
+        }
+      >
+        <Plus className="size-5" />
+      </span>
+      <span className={labelSlot + " text-sm font-bold text-primary"}>{label}</span>
     </button>
   );
 }
