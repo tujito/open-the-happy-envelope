@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -127,14 +128,17 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Gaveåbningen vises uden bundmenu, så modtageren kun ser gaven.
+  const hideNav = pathname.startsWith("/tujito/");
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <div className="pb-bottom-nav">
+      <div className={hideNav ? undefined : "pb-bottom-nav"}>
         <Outlet />
       </div>
-      <BottomNav />
+      {hideNav ? null : <BottomNav />}
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
