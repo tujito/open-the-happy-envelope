@@ -13,39 +13,39 @@ export type SurpriseTemplate = {
 
 export const SURPRISE_TEMPLATES: SurpriseTemplate[] = [
   {
-    id: "morfar",
-    title: "Morfar til barnebarn",
-    emoji: "👴🏻",
-    kind: "text",
-    message: "Din morfar tænker på dig og sender dig en lille overraskelse.",
-  },
-  {
-    id: "moster",
-    title: "Moster til nevø",
-    emoji: "👩🏻",
-    kind: "text",
-    message: "Din moster sender dig en varm hilsen – bare fordi du er dig.",
-  },
-  {
-    id: "bedstemor",
-    title: "Bedstemor til barnebarn",
-    emoji: "👵🏻",
-    kind: "text",
-    message: "Din bedstemor holder så meget af dig og vil gerne overraske dig.",
-  },
-  {
-    id: "ven",
-    title: "Ven til ven",
-    emoji: "🫶",
-    kind: "text",
-    message: "En ven tænker på dig i dag og sender dig noget sødt.",
-  },
-  {
     id: "knus",
-    title: "Giv jeres barnebarn et uventet knus",
+    title: "Knus",
     emoji: "🤗",
     kind: "text",
     message: "Et stort, varmt knus til dig – bare fordi vi holder så meget af dig.",
+  },
+  {
+    id: "sang",
+    title: "Sang",
+    emoji: "🎵",
+    kind: "audio",
+    message: "En lille sang, kun til dig.",
+  },
+  {
+    id: "varm-hilsen",
+    title: "Hilsen",
+    emoji: "💌",
+    kind: "text",
+    message: "En varm hilsen til dig – vi tænker på dig.",
+  },
+  {
+    id: "minde",
+    title: "Minde",
+    emoji: "📸",
+    kind: "text",
+    message: "Kan du huske, da vi … ? Det tænker jeg tit på, og det gør mig glad.",
+  },
+  {
+    id: "kaffe",
+    title: "Kaffe",
+    emoji: "☕",
+    kind: "text",
+    message: "Har du tid til en kop kaffe snart? Jeg giver – og jeg glæder mig til at se dig.",
   },
 ];
 
@@ -118,6 +118,11 @@ export const TO_PEOPLE: Person[] = [
   person("Moster", "👩🏻‍🦰"),
   person("Onkel", "🧔🏻"),
 ];
+
+/** People you can add as co-sender: everyone in the left list except the sender and those already added. */
+export function coSenderChoices(from: Person, added: Person[]) {
+  return FROM_PEOPLE.filter((p) => p.name !== from.name && !added.some((a) => a.name === p.name));
+}
 
 export const DEFAULT_FROM = person("Bedstemor", "bedstemor");
 export const DEFAULT_TO = person("Barnebarn", "barnebarn");

@@ -5,6 +5,7 @@ import {
   SURPRISE_TEMPLATES,
   TO_PEOPLE,
   canSendSurprise,
+  coSenderChoices,
   greetingFromTemplate,
   type SurpriseForm,
 } from "@/lib/send-surprise";
@@ -19,14 +20,8 @@ const complete: SurpriseForm = {
 };
 
 describe("Send surprise", () => {
-  it("offers the five requested surprise cards in order", () => {
-    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual([
-      "Morfar til barnebarn",
-      "Moster til nevø",
-      "Bedstemor til barnebarn",
-      "Ven til ven",
-      "Giv jeres barnebarn et uventet knus",
-    ]);
+  it("offers the five round surprise icons in order", () => {
+    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual(["Knus", "Sang", "Hilsen", "Minde", "Kaffe"]);
   });
 
   it("the button is active when all three parts are filled", () => {
@@ -78,5 +73,14 @@ describe("Send surprise", () => {
     for (const p of [...FROM_PEOPLE, ...TO_PEOPLE]) {
       expect(p.art.trim().length).toBeGreaterThan(0);
     }
+  });
+
+  it("Tilføj medsender never offers the sender or someone already added", () => {
+    const bedstemor = FROM_PEOPLE.find((p) => p.name === "Bedstemor")!;
+    const bedstefar = FROM_PEOPLE.find((p) => p.name === "Bedstefar")!;
+    const names = coSenderChoices(bedstemor, [bedstefar]).map((p) => p.name);
+    expect(names).not.toContain("Bedstemor");
+    expect(names).not.toContain("Bedstefar");
+    expect(names).toContain("Morfar");
   });
 });

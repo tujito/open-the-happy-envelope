@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, ChevronDown, Copy, Heart, MessageCircle, Send, Share2, Users } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Camera, Check, ChevronDown, Copy, Heart, MessageCircle, PenLine, Plus, Send, Share2, Users, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 
 import avatarBarnebarn from "@/assets/avatar-barnebarn.png";
@@ -9,6 +9,7 @@ import giftImage from "@/assets/tujito-gift.png";
 import { Shell } from "@/components/tujito/Shell";
 import { GreetingComposer, emptyGreeting, type GreetingDraft } from "@/components/tujito/GreetingComposer";
 import { Button } from "@/components/ui/button";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import {
   DEFAULT_FROM,
@@ -17,6 +18,7 @@ import {
   SURPRISE_TEMPLATES,
   TO_PEOPLE,
   canSendSurprise,
+  coSenderChoices,
   columnsFilled,
   getTemplate,
   greetingFromTemplate,
@@ -31,9 +33,9 @@ export const Route = createFileRoute("/lav")({
   head: () => ({
     meta: [
       { title: "Send surprise – Tujito" },
-      { name: "description", content: "Vælg hvem gaven er fra, hvilken overraskelse I vil give, og hvem den skal til." },
+      { name: "description", content: "Vælg hvem gaven er fra, hvem der sender med, hvilken overraskelse I giver, og hvem den skal til." },
       { property: "og:title", content: "Send surprise – Tujito" },
-      { property: "og:description", content: "Vælg hvem gaven er fra, hvilken overraskelse I vil give, og hvem den skal til." },
+      { property: "og:description", content: "Vælg hvem gaven er fra, hvem der sender med, hvilken overraskelse I giver, og hvem den skal til." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -42,8 +44,12 @@ export const Route = createFileRoute("/lav")({
 });
 
 const MY_PERSON_KEY = "tujito-mit-person";
+const ME_KEY = "tujito-mig";
 const fieldClass =
   "h-14 rounded-2xl border-2 bg-background px-4 text-xl md:text-xl shadow-none focus-visible:ring-2";
+
+type Me = { nick: string; photo: string | null };
+type Panel = "top-from" | "top-to" | "col-from" | "me" | "co" | "col-to" | null;
 
 function personImage(art: string) {
   if (art === "bedstemor") return avatarBedstemor;
@@ -51,22 +57,52 @@ function personImage(art: string) {
   return null;
 }
 
+/** Shrinks a chosen photo to a small square so it can be kept on this phone. */
+function shrinkPhoto(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const size = 192;
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("no canvas"));
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("bad image"));
+    };
+    img.src = url;
+  });
+}
+
 function SendSurprise() {
-  const [from, setFrom] = useState<Person>(DEFAULT_FROM);
+  const [from, setFromState] = useState<Person>(DEFAULT_FROM);
   const [to, setTo] = useState<Person>(DEFAULT_TO);
-  const [picker, setPicker] = useState<"from" | "to" | null>(null);
+  const [me, setMe] = useState<Me>({ nick: "", photo: null });
+  const [coSenders, setCoSenders] = useState<Person[]>([]);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [editing, setEditing] = useState(false);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<GreetingDraft>(emptyGreeting);
   const [recipientPhone, setRecipientPhone] = useState("");
   const [triedSend, setTriedSend] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<{ id: string; name: string; phone: string } | null>(null);
+  const [sent, setSent] = useState<{ id: string; name: string; phone: string; helpers: string[] } | null>(null);
 
   // Remember who you are on this phone, so you only choose once.
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(MY_PERSON_KEY);
-      if (saved) setFrom(JSON.parse(saved) as Person);
+      if (saved) setFromState(JSON.parse(saved) as Person);
+      const savedMe = window.localStorage.getItem(ME_KEY);
+      if (savedMe) setMe(JSON.parse(savedMe) as Me);
     } catch {
       // old or broken value – keep the default
     }
@@ -74,6 +110,23 @@ function SendSurprise() {
   useEffect(() => {
     if (from.name.trim()) window.localStorage.setItem(MY_PERSON_KEY, JSON.stringify(from));
   }, [from]);
+
+  function setFrom(p: Person) {
+    setFromState(p);
+    setCoSenders((list) => list.filter((c) => c.name !== p.name));
+  }
+
+  function saveMe(next: Me) {
+    setMe(next);
+    try {
+      window.localStorage.setItem(ME_KEY, JSON.stringify(next));
+    } catch {
+      toast.error("Billedet er lidt for stort. Prøv et andet.");
+    }
+  }
+
+  const toggle = (p: Exclude<Panel, null>) => setPanel((cur) => (cur === p ? null : p));
+  const close = () => setPanel(null);
 
   const form = {
     senderName: from.name,
@@ -85,13 +138,18 @@ function SendSurprise() {
   const filled = columnsFilled(form);
   const ready = canSendSurprise(form);
   const template = getTemplate(templateId);
+  const myName = me.nick.trim() || "Dig";
 
   function chooseTemplate(id: string) {
-    if (id === templateId) return;
+    if (id === templateId) {
+      setEditing(true);
+      return;
+    }
     const t = getTemplate(id);
     if (!t) return;
     setTemplateId(id);
     setGreeting(greetingFromTemplate(t));
+    if (t.kind !== "text") setEditing(true);
   }
 
   async function send() {
@@ -111,7 +169,7 @@ function SendSurprise() {
           greeting: prepared,
         },
       });
-      setSent({ id, name: to.name.trim(), phone: recipientPhone });
+      setSent({ id, name: to.name.trim(), phone: recipientPhone, helpers: coSenders.map((c) => c.name) });
     } catch {
       toast.error("Ups, det lykkedes ikke at sende. Prøv igen om lidt.");
     } finally {
@@ -119,10 +177,10 @@ function SendSurprise() {
     }
   }
 
-  if (sent) return <Sent {...sent} helpers={[]} />;
+  if (sent) return <Sent {...sent} />;
 
   return (
-    <div className="mx-auto flex min-h-page w-full max-w-2xl flex-col px-4 pb-10 sm:px-6">
+    <div className="mx-auto flex min-h-page w-full max-w-2xl flex-col px-4 pb-8 sm:px-6">
       {/* Fast top-bar: FRA – Tujito? – TIL */}
       <div className="sticky top-0 z-40 -mx-4 rounded-b-[1.75rem] bg-nav px-4 pb-3 pt-3 shadow-soft sm:-mx-6 sm:px-6">
         <div className="grid grid-cols-[1fr_auto_1fr] items-start">
@@ -130,12 +188,12 @@ function SendSurprise() {
             label="FRA"
             person={from}
             presets={FROM_PEOPLE}
-            open={picker === "from"}
-            onToggle={() => setPicker(picker === "from" ? null : "from")}
-            onClose={() => setPicker(null)}
+            open={panel === "top-from"}
+            onToggle={() => toggle("top-from")}
+            onClose={close}
             onPick={(p) => {
               setFrom(p);
-              setPicker(null);
+              close();
             }}
           />
           <p className="pt-6 text-center font-display text-4xl font-semibold text-gift">Tujito?</p>
@@ -144,108 +202,238 @@ function SendSurprise() {
             person={to}
             presets={TO_PEOPLE}
             align="right"
-            open={picker === "to"}
-            onToggle={() => setPicker(picker === "to" ? null : "to")}
-            onClose={() => setPicker(null)}
+            open={panel === "top-to"}
+            onToggle={() => toggle("top-to")}
+            onClose={close}
             onPick={(p) => {
               setTo(p);
-              setPicker(null);
+              close();
             }}
           />
         </div>
       </div>
 
-      {/* Skabeloner – vandret scroll */}
-      <section aria-label="Vælg overraskelse" className="mt-5">
-        <h1 className="text-2xl font-semibold">Vælg overraskelse</h1>
-        <div
-          role="radiogroup"
-          aria-label="Skabeloner"
-          className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6"
-        >
-          {SURPRISE_TEMPLATES.map((t) => {
-            const active = templateId === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => chooseTemplate(t.id)}
-                className={
-                  "relative flex w-44 shrink-0 snap-start flex-col items-start gap-2 rounded-3xl border-2 p-4 text-left transition-all active:scale-[0.97] " +
-                  (active
-                    ? "border-primary bg-blush text-secondary-foreground shadow-gift"
-                    : "border-border bg-card text-foreground hover:border-primary/50")
-                }
-              >
-                <span
-                  aria-hidden
-                  className={
-                    "flex size-12 items-center justify-center rounded-2xl text-2xl " +
-                    (active ? "bg-card" : "bg-muted")
-                  }
-                >
-                  {t.emoji}
-                </span>
-                <span className="text-lg font-bold leading-snug">{t.title}</span>
-                {active && (
-                  <span className="absolute right-2.5 top-2.5 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
-                    <Check className="size-4" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {triedSend && !template && <Hint>Tryk på en af overraskelserne.</Hint>}
-      </section>
+      {/* 3 kolonner: Fra og med – Overraskelse – Til */}
+      <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
+        {/* Venstre: Fra og med */}
+        <section aria-label="Fra og med" className={columnClass}>
+          <ColumnTitle>Fra og med</ColumnTitle>
 
-      {/* Den valgte skabelon – vist stort */}
+          <Dropdown open={panel === "col-from"} onClose={close}>
+            <AvatarButton
+              caption="AFSENDER"
+              art={from.art}
+              name={from.name}
+              expanded={panel === "col-from"}
+              ariaLabel={`Afsender: ${from.name}. Tryk for at skifte.`}
+              onClick={() => toggle("col-from")}
+            />
+            {panel === "col-from" && (
+              <PanelBox label="Vælg hvem gaven er fra">
+                <PeopleList
+                  people={FROM_PEOPLE}
+                  selected={from}
+                  onPick={(p) => {
+                    setFrom(p);
+                    close();
+                  }}
+                />
+              </PanelBox>
+            )}
+          </Dropdown>
+
+          <Dropdown open={panel === "me"} onClose={close}>
+            <AvatarButton
+              caption="DIG"
+              photo={me.photo}
+              art="🙂"
+              name={myName}
+              expanded={panel === "me"}
+              ariaLabel={`Dig: ${myName}. Tryk for at skifte navn eller billede.`}
+              onClick={() => toggle("me")}
+            />
+            {panel === "me" && (
+              <PanelBox label="Dit navn og billede">
+                <MePanel me={me} onChange={saveMe} onDone={close} />
+              </PanelBox>
+            )}
+          </Dropdown>
+
+          {coSenders.map((c) => (
+            <div key={c.name} className="relative flex flex-col items-center gap-0.5 p-1 animate-pop">
+              <span className="text-xs font-bold tracking-widest text-muted-foreground">MED</span>
+              <Avatar art={c.art} />
+              <span className="max-w-full truncate text-base font-bold">{c.name}</span>
+              <button
+                type="button"
+                onClick={() => setCoSenders((list) => list.filter((x) => x.name !== c.name))}
+                aria-label={`Fjern ${c.name}`}
+                className="absolute right-0 top-4 flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-muted-foreground active:scale-90"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          ))}
+
+          <Dropdown open={panel === "co"} onClose={close}>
+            <button
+              type="button"
+              onClick={() => toggle("co")}
+              aria-expanded={panel === "co"}
+              aria-haspopup="listbox"
+              className="flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors active:scale-95"
+            >
+              <span className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-background text-primary">
+                <Plus className="size-7" />
+              </span>
+              <span className="text-center text-sm font-bold leading-tight text-primary">
+                Tilføj
+                <br />
+                medsender
+              </span>
+            </button>
+            {panel === "co" && (
+              <PanelBox label="Vælg en medsender">
+                <p className="px-3 pb-1 pt-2 text-base font-bold">Hvem sender med?</p>
+                <PeopleList
+                  people={coSenderChoices(from, coSenders)}
+                  onPick={(p) => {
+                    setCoSenders((list) => [...list, p]);
+                    close();
+                  }}
+                />
+              </PanelBox>
+            )}
+          </Dropdown>
+        </section>
+
+        {/* Midten: Overraskelser – lodret scroll */}
+        <section aria-label="Vælg overraskelse" className={columnClass}>
+          <ColumnTitle>Overraskelse</ColumnTitle>
+          <div className="relative w-full min-h-64 flex-1">
+            <div
+              role="radiogroup"
+              aria-label="Overraskelser"
+              className="absolute inset-0 flex snap-y flex-col items-center gap-3 overflow-y-auto overscroll-contain pb-8 pt-1"
+            >
+              {SURPRISE_TEMPLATES.map((t) => {
+                const active = templateId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => chooseTemplate(t.id)}
+                    className="flex shrink-0 snap-start flex-col items-center gap-1 rounded-2xl p-1 transition-transform active:scale-95"
+                  >
+                    <span
+                      className={
+                        "relative flex size-16 items-center justify-center rounded-full border-2 text-3xl transition-all " +
+                        (active
+                          ? "border-primary bg-blush shadow-gift ring-4 ring-primary/25"
+                          : "border-border bg-muted")
+                      }
+                    >
+                      <span aria-hidden>{t.emoji}</span>
+                      {active && (
+                        <span className="absolute -right-1 -top-1 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
+                          <Check className="size-3.5" />
+                        </span>
+                      )}
+                    </span>
+                    <span className={"text-base font-bold " + (active ? "text-primary" : "text-foreground")}>
+                      {t.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 flex h-10 items-end justify-center bg-gradient-to-t from-card to-transparent">
+              <ChevronDown className="size-5 text-muted-foreground" />
+            </div>
+          </div>
+          {triedSend && !template && <Hint>Tryk på en</Hint>}
+        </section>
+
+        {/* Højre: Til */}
+        <section aria-label="Til" className={columnClass}>
+          <ColumnTitle>Til</ColumnTitle>
+          <Dropdown open={panel === "col-to"} onClose={close}>
+            <AvatarButton
+              caption="MODTAGER"
+              art={to.art}
+              name={to.name}
+              expanded={panel === "col-to"}
+              ariaLabel={`Modtager: ${to.name}. Tryk for at skifte person eller nummer.`}
+              onClick={() => toggle("col-to")}
+            />
+            {panel === "col-to" && (
+              <PanelBox label="Vælg hvem gaven skal til" align="right">
+                <div className="p-2">
+                  <label htmlFor="recipient-phone" className="mb-2 block text-base font-bold">
+                    Telefon- eller SMS-nummer
+                  </label>
+                  <Input
+                    id="recipient-phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={recipientPhone}
+                    onChange={(e) => setRecipientPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && close()}
+                    placeholder="12 34 56 78"
+                    autoComplete="off"
+                    maxLength={30}
+                    autoFocus
+                    className={fieldClass}
+                  />
+                  <Button variant="gift" size="big" className="mt-3 w-full" onClick={close}>
+                    <Check /> Færdig
+                  </Button>
+                </div>
+                <p className="px-3 pb-1 pt-3 text-base font-bold text-muted-foreground">Eller vælg en anden</p>
+                <PeopleList people={TO_PEOPLE} selected={to} onPick={setTo} />
+              </PanelBox>
+            )}
+          </Dropdown>
+          <button
+            type="button"
+            onClick={() => toggle("col-to")}
+            className={
+              "-mt-2 rounded-xl px-1 text-center text-base font-semibold leading-tight " +
+              (filled.to ? "text-muted-foreground" : "text-primary" + (triedSend ? " animate-pulse" : ""))
+            }
+          >
+            {recipientPhone.trim() ? recipientPhone : "Tryk og skriv nummer"}
+          </button>
+          {triedSend && recipientPhone.trim() && !filled.to && <Hint>Skriv 8 cifre</Hint>}
+        </section>
+      </div>
+
+      {/* Den valgte hilsen – kan rettes */}
       {template && (
-        <section aria-label="Din overraskelse" className="mt-5 rounded-[2rem] border-2 border-primary/50 bg-card p-6 text-center shadow-soft animate-rise">
-          <span aria-hidden className="text-6xl">
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="mt-4 flex w-full items-center gap-3 rounded-3xl border-2 border-primary/40 bg-card p-3 text-left shadow-soft animate-rise active:scale-[0.99]"
+        >
+          <span aria-hidden className="flex size-12 shrink-0 items-center justify-center rounded-full bg-blush text-2xl">
             {template.emoji}
           </span>
-          <h2 className="mt-2 text-3xl font-semibold">{template.title}</h2>
-          <p className="mt-1 text-lg text-muted-foreground">
-            Fra {from.name} til {to.name}
-          </p>
-          <div className="mt-5 border-t-2 border-dashed border-border pt-5 text-left">
-            <p className="mb-3 text-lg font-bold">Gør den personlig</p>
-            <GreetingComposer value={greeting} onChange={setGreeting} recipientName={to.name.trim()} />
-            {triedSend && !filled.surprise && (
-              <Hint>
-                {greeting.kind === "text"
-                  ? "Skriv et par ord i feltet."
-                  : greeting.kind === "video"
-                    ? "Vælg en video først."
-                    : "Optag din lyd-hilsen først."}
-              </Hint>
-            )}
-          </div>
-        </section>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-bold">Din hilsen</span>
+            <span className={"block truncate text-base " + (filled.surprise ? "text-muted-foreground" : "font-semibold text-primary")}>
+              {greetingSummary(greeting)}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-3 py-2 text-base font-bold text-secondary-foreground">
+            <PenLine className="size-4" /> Ret
+          </span>
+        </button>
       )}
 
-      {/* Telefonnummer */}
-      <section aria-label="Telefonnummer" className="mt-5 rounded-[2rem] border-2 border-border bg-card p-5 shadow-soft">
-        <FieldLabel htmlFor="recipient-phone">{to.name}s telefon- eller SMS-nummer</FieldLabel>
-        <Input
-          id="recipient-phone"
-          type="tel"
-          inputMode="tel"
-          value={recipientPhone}
-          onChange={(e) => setRecipientPhone(e.target.value)}
-          placeholder="12 34 56 78"
-          autoComplete="off"
-          maxLength={30}
-          className={fieldClass}
-        />
-        {triedSend && !filled.to && <Hint>Skriv et nummer med 8 cifre.</Hint>}
-      </section>
-
       {/* Send-knap */}
-      <div className="mx-auto mt-8 w-full max-w-md">
+      <div className="mx-auto mt-5 w-full max-w-md">
         <Button
           variant={ready ? "gift" : "soft"}
           size="xl"
@@ -253,7 +441,7 @@ function SendSurprise() {
           disabled={sending}
           aria-disabled={!ready}
           className={
-            "h-20 text-2xl " +
+            "h-18 text-2xl " +
             (ready ? "" : "border-transparent bg-muted text-muted-foreground shadow-none hover:border-transparent")
           }
         >
@@ -271,8 +459,215 @@ function SendSurprise() {
             : "Vælg en overraskelse og skriv nummeret, så bliver knappen lyserød."}
         </p>
       </div>
+
+      <Drawer open={editing} onOpenChange={setEditing}>
+        <DrawerContent className="max-h-[92dvh]">
+          <div className="mx-auto w-full max-w-md overflow-y-auto px-5 pb-6">
+            <DrawerHeader className="px-0 text-left">
+              <DrawerTitle className="font-display text-3xl">
+                {template ? `${template.emoji} ${template.title}` : "Din hilsen"}
+              </DrawerTitle>
+              <DrawerDescription className="text-lg">
+                Gør den personlig til {to.name}.
+              </DrawerDescription>
+            </DrawerHeader>
+            <GreetingComposer value={greeting} onChange={setGreeting} recipientName={to.name.trim()} />
+            <Button variant="gift" size="xl" className="mt-5" onClick={() => setEditing(false)}>
+              <Check /> Færdig
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
+}
+
+const columnClass =
+  "flex min-w-0 flex-col items-center gap-3 rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-3 shadow-soft";
+
+function greetingSummary(g: GreetingDraft) {
+  if (g.kind === "video") return g.file ? "🎬 Din video er klar" : "Vælg en video";
+  if (g.kind === "audio") return g.file ? "🎙️ Din lyd er klar" : "Tryk og optag din lyd";
+  return g.message.trim() || "Skriv et par ord";
+}
+
+function ColumnTitle({ children }: { children: ReactNode }) {
+  return <h2 className="text-center text-base font-bold leading-tight text-foreground sm:text-lg">{children}</h2>;
+}
+
+function Avatar({ art, photo }: { art: string; photo?: string | null | undefined }) {
+  const img = photo ?? personImage(art);
+  return (
+    <span className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
+      {img ? (
+        <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
+      ) : (
+        <span aria-hidden>{art}</span>
+      )}
+    </span>
+  );
+}
+
+function AvatarButton({
+  caption,
+  art,
+  photo,
+  name,
+  expanded,
+  ariaLabel,
+  onClick,
+}: {
+  caption: string;
+  art: string;
+  photo?: string | null | undefined;
+  name: string;
+  expanded: boolean;
+  ariaLabel: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={expanded}
+      aria-haspopup="dialog"
+      aria-label={ariaLabel}
+      className={
+        "flex max-w-full flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
+        (expanded ? "bg-secondary" : "")
+      }
+    >
+      <span className="text-xs font-bold tracking-widest text-muted-foreground">{caption}</span>
+      <span className="relative">
+        <Avatar art={art} photo={photo} />
+        <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <ChevronDown className="size-3.5" />
+        </span>
+      </span>
+      <span className="max-w-full truncate text-base font-bold">{name}</span>
+    </button>
+  );
+}
+
+/** Wraps a button + its little list, and closes the list on a tap elsewhere or Escape. */
+function Dropdown({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  useCloseOutside(box, open, onClose);
+  return (
+    <div ref={box} className="relative flex max-w-full flex-col items-center">
+      {children}
+    </div>
+  );
+}
+
+function PanelBox({ label, align = "left", children }: { label: string; align?: "left" | "right"; children: ReactNode }) {
+  return (
+    <div
+      role="dialog"
+      aria-label={label}
+      className={
+        "absolute top-full z-50 mt-2 max-h-[26rem] w-64 overflow-y-auto rounded-3xl border border-primary/15 bg-card p-2 text-left shadow-soft animate-rise " +
+        (align === "right" ? "-right-1" : "-left-1")
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
+function PeopleList({ people, selected, onPick }: { people: Person[]; selected?: Person; onPick: (p: Person) => void }) {
+  return (
+    <div role="listbox">
+      {people.map((p) => {
+        const active = !!selected && selected.name === p.name && selected.art === p.art;
+        const pimg = personImage(p.art);
+        return (
+          <button
+            key={p.name}
+            type="button"
+            role="option"
+            aria-selected={active}
+            onClick={() => onPick(p)}
+            className={
+              "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-lg font-bold transition-colors active:scale-[0.98] " +
+              (active ? "bg-blush text-secondary-foreground" : "hover:bg-muted")
+            }
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xl">
+              {pimg ? (
+                <img src={pimg} alt="" width={816} height={816} loading="lazy" className="size-full object-cover" />
+              ) : (
+                <span aria-hidden>{p.art}</span>
+              )}
+            </span>
+            {p.name}
+            {active && <Check className="ml-auto size-5 shrink-0 text-primary" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MePanel({ me, onChange, onDone }: { me: Me; onChange: (m: Me) => void; onDone: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="p-2">
+      <label htmlFor="my-nick" className="mb-2 block text-base font-bold">
+        Dit kaldenavn
+      </label>
+      <Input
+        id="my-nick"
+        value={me.nick}
+        onChange={(e) => onChange({ ...me, nick: e.target.value })}
+        onKeyDown={(e) => e.key === "Enter" && onDone()}
+        placeholder="Fx Lise"
+        maxLength={30}
+        autoComplete="off"
+        className={fieldClass}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          try {
+            onChange({ ...me, photo: await shrinkPhoto(f) });
+          } catch {
+            toast.error("Vi kunne ikke bruge det billede. Prøv et andet.");
+          }
+        }}
+      />
+      <Button variant="soft" size="big" className="mt-3 w-full" onClick={() => fileRef.current?.click()}>
+        <Camera /> {me.photo ? "Skift billede" : "Vælg billede"}
+      </Button>
+      <Button variant="gift" size="big" className="mt-2 w-full" onClick={onDone}>
+        <Check /> Færdig
+      </Button>
+    </div>
+  );
+}
+
+function useCloseOutside(box: RefObject<HTMLDivElement | null>, open: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: PointerEvent) {
+      if (!box.current?.contains(e.target as Node)) onClose();
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [box, open, onClose]);
 }
 
 function PersonButton({
@@ -295,24 +690,7 @@ function PersonButton({
   onPick: (p: Person) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
-  const img = personImage(person.art);
-
-  // Tap somewhere else on the page – or press Escape – and the list closes again.
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: PointerEvent) {
-      if (!box.current?.contains(e.target as Node)) onClose();
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
+  useCloseOutside(box, open, onClose);
 
   return (
     <div ref={box} className={"relative " + (align === "right" ? "justify-self-end" : "justify-self-start")}>
@@ -328,12 +706,8 @@ function PersonButton({
         }
       >
         <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
-        <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
-          {img ? (
-            <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
-          ) : (
-            <span aria-hidden>{person.art}</span>
-          )}
+        <span className="relative">
+          <Avatar art={person.art} />
           <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <ChevronDown className="size-3.5" />
           </span>
@@ -343,58 +717,16 @@ function PersonButton({
 
       {open && (
         <div
-          role="listbox"
           aria-label={label === "FRA" ? "Vælg hvem gaven er fra" : "Vælg hvem gaven skal til"}
           className={
             "absolute top-full z-50 mt-2 max-h-72 w-60 overflow-y-auto rounded-3xl border border-primary/15 bg-card p-2 shadow-soft animate-rise " +
             (align === "right" ? "right-0" : "left-0")
           }
         >
-          {presets.map((p) => {
-            const active = person.name === p.name && person.art === p.art;
-            const pimg = personImage(p.art);
-            return (
-              <button
-                key={p.name}
-                type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => onPick(p)}
-                className={
-                  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-lg font-bold transition-colors active:scale-[0.98] " +
-                  (active ? "bg-blush text-secondary-foreground" : "hover:bg-muted")
-                }
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xl">
-                  {pimg ? (
-                    <img
-                      src={pimg}
-                      alt=""
-                      width={816}
-                      height={816}
-                      loading="lazy"
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <span aria-hidden>{p.art}</span>
-                  )}
-                </span>
-                {p.name}
-                {active && <Check className="ml-auto size-5 shrink-0 text-primary" />}
-              </button>
-            );
-          })}
+          <PeopleList people={presets} selected={person} onPick={onPick} />
         </div>
       )}
     </div>
-  );
-}
-
-function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
-  return (
-    <label htmlFor={htmlFor} className="mb-2 mt-4 block text-lg font-bold first:mt-0">
-      {children}
-    </label>
   );
 }
 
