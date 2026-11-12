@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BorsenRouteImport } from './routes/borsen'
-import { Route as FeedRouteImport } from './routes/feed'
 import { Route as LavRouteImport } from './routes/lav'
 import { Route as MitNetRouteImport } from './routes/mit-net'
 import { Route as SendTakRouteImport } from './routes/send-tak'
@@ -26,11 +25,6 @@ const IndexRoute = IndexRouteImport.update({
 const BorsenRoute = BorsenRouteImport.update({
   id: '/borsen',
   path: '/borsen',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedRoute = FeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LavRoute = LavRouteImport.update({
@@ -62,7 +56,6 @@ const TilIdRoute = TilIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/borsen': typeof BorsenRoute
-  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
   '/mit-net': typeof MitNetRoute
   '/send-tak': typeof SendTakRoute
@@ -72,7 +65,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/borsen': typeof BorsenRoute
-  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
   '/mit-net': typeof MitNetRoute
   '/send-tak': typeof SendTakRoute
@@ -83,7 +75,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/borsen': typeof BorsenRoute
-  '/feed': typeof FeedRoute
   '/lav': typeof LavRoute
   '/mit-net': typeof MitNetRoute
   '/send-tak': typeof SendTakRoute
@@ -95,7 +86,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/borsen'
-    | '/feed'
     | '/lav'
     | '/mit-net'
     | '/send-tak'
@@ -105,7 +95,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/borsen'
-    | '/feed'
     | '/lav'
     | '/mit-net'
     | '/send-tak'
@@ -115,7 +104,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/borsen'
-    | '/feed'
     | '/lav'
     | '/mit-net'
     | '/send-tak'
@@ -126,7 +114,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BorsenRoute: typeof BorsenRoute
-  FeedRoute: typeof FeedRoute
   LavRoute: typeof LavRoute
   MitNetRoute: typeof MitNetRoute
   SendTakRoute: typeof SendTakRoute
@@ -148,13 +135,6 @@ declare module '@tanstack/react-router' {
       path: '/borsen'
       fullPath: '/borsen'
       preLoaderRoute: typeof BorsenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed': {
-      id: '/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lav': {
@@ -198,7 +178,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BorsenRoute: BorsenRoute,
-  FeedRoute: FeedRoute,
   LavRoute: LavRoute,
   MitNetRoute: MitNetRoute,
   SendTakRoute: SendTakRoute,
