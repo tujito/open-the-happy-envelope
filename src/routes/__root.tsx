@@ -130,7 +130,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Gaveåbningen vises uden bundmenu, så modtageren kun ser gaven.
-  const hideNav = pathname.startsWith("/tujito/");
+  const hideNav = pathname.startsWith("/til/");
 
   return (
     <QueryClientProvider client={queryClient}>
