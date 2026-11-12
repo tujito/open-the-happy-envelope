@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, ChevronDown, Copy, Heart, MessageCircle, Send, Share2, Users } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import avatarBarnebarn from "@/assets/avatar-barnebarn.png";
@@ -11,12 +11,17 @@ import { GreetingComposer, emptyGreeting, type GreetingDraft } from "@/component
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  DEFAULT_FROM,
+  DEFAULT_TO,
+  FROM_PEOPLE,
   SURPRISE_TEMPLATES,
+  TO_PEOPLE,
   canSendSurprise,
   columnsFilled,
   getTemplate,
   greetingFromTemplate,
   joinNames,
+  type Person,
 } from "@/lib/send-surprise";
 import { createTujito } from "@/lib/tujito.functions";
 import { joinLink, recipientLink, shareLink, smsHref } from "@/lib/tujito";
@@ -40,25 +45,6 @@ const MY_PERSON_KEY = "tujito-mit-person";
 const fieldClass =
   "h-14 rounded-2xl border-2 bg-background px-4 text-xl md:text-xl shadow-none focus-visible:ring-2";
 
-/** art: "bedstemor" | "barnebarn" use the drawn portraits; anything else is an emoji. */
-type Person = { name: string; art: string };
-
-const FROM_PRESETS: Person[] = [
-  { name: "Bedstemor", art: "bedstemor" },
-  { name: "Morfar", art: "👴🏻" },
-  { name: "Mormor", art: "👵🏻" },
-  { name: "Moster", art: "👩🏻" },
-  { name: "Onkel", art: "🧔🏻" },
-  { name: "Ven", art: "🫶" },
-];
-
-const TO_PRESETS: Person[] = [
-  { name: "Barnebarn", art: "barnebarn" },
-  { name: "Nevø", art: "👦🏻" },
-  { name: "Niece", art: "👧🏻" },
-  { name: "Ven", art: "🫶" },
-];
-
 function personImage(art: string) {
   if (art === "bedstemor") return avatarBedstemor;
   if (art === "barnebarn") return avatarBarnebarn;
@@ -66,8 +52,8 @@ function personImage(art: string) {
 }
 
 function SendSurprise() {
-  const [from, setFrom] = useState<Person>(FROM_PRESETS[0]!);
-  const [to, setTo] = useState<Person>(TO_PRESETS[0]!);
+  const [from, setFrom] = useState<Person>(DEFAULT_FROM);
+  const [to, setTo] = useState<Person>(DEFAULT_TO);
   const [picker, setPicker] = useState<"from" | "to" | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<GreetingDraft>(emptyGreeting);
@@ -143,38 +129,31 @@ function SendSurprise() {
           <PersonButton
             label="FRA"
             person={from}
+            presets={FROM_PEOPLE}
             open={picker === "from"}
-            onClick={() => setPicker(picker === "from" ? null : "from")}
+            onToggle={() => setPicker(picker === "from" ? null : "from")}
+            onClose={() => setPicker(null)}
+            onPick={(p) => {
+              setFrom(p);
+              setPicker(null);
+            }}
           />
           <p className="pt-6 text-center font-display text-4xl font-semibold text-gift">Tujito?</p>
           <PersonButton
             label="TIL"
             person={to}
+            presets={TO_PEOPLE}
             align="right"
             open={picker === "to"}
-            onClick={() => setPicker(picker === "to" ? null : "to")}
+            onToggle={() => setPicker(picker === "to" ? null : "to")}
+            onClose={() => setPicker(null)}
+            onPick={(p) => {
+              setTo(p);
+              setPicker(null);
+            }}
           />
         </div>
       </div>
-
-      {/* Person-vælger */}
-      {picker && (
-        <PersonPicker
-          key={picker}
-          title={picker === "from" ? "Hvem er gaven fra?" : "Hvem skal have gaven?"}
-          presets={picker === "from" ? FROM_PRESETS : TO_PRESETS}
-          person={picker === "from" ? from : to}
-          onPick={(p) => {
-            if (picker === "from") setFrom(p);
-            else setTo(p);
-          }}
-          onName={(name) => {
-            if (picker === "from") setFrom({ ...from, name });
-            else setTo({ ...to, name });
-          }}
-          onDone={() => setPicker(null)}
-        />
-      )}
 
       {/* Skabeloner – vandret scroll */}
       <section aria-label="Vælg overraskelse" className="mt-5">
@@ -299,99 +278,115 @@ function SendSurprise() {
 function PersonButton({
   label,
   person,
+  presets,
   open,
   align = "left",
-  onClick,
+  onToggle,
+  onClose,
+  onPick,
 }: {
   label: string;
   person: Person;
+  presets: Person[];
   open: boolean;
   align?: "left" | "right";
-  onClick: () => void;
-}) {
-  const img = personImage(person.art);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-expanded={open}
-      aria-label={`${label}: ${person.name}. Tryk for at skifte person.`}
-      className={
-        "flex flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
-        (align === "right" ? "justify-self-end" : "justify-self-start") +
-        (open ? " bg-secondary" : "")
-      }
-    >
-      <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
-      <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
-        {img ? (
-          <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
-        ) : (
-          <span aria-hidden>{person.art}</span>
-        )}
-        <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <ChevronDown className="size-3.5" />
-        </span>
-      </span>
-      <span className="max-w-24 truncate text-base font-bold">{person.name}</span>
-    </button>
-  );
-}
-
-function PersonPicker({
-  title,
-  presets,
-  person,
-  onPick,
-  onName,
-  onDone,
-}: {
-  title: string;
-  presets: Person[];
-  person: Person;
+  onToggle: () => void;
+  onClose: () => void;
   onPick: (p: Person) => void;
-  onName: (name: string) => void;
-  onDone: () => void;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  const img = personImage(person.art);
+
+  // Tap somewhere else on the page – or press Escape – and the list closes again.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: PointerEvent) {
+      if (!box.current?.contains(e.target as Node)) onClose();
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
   return (
-    <section aria-label={title} className="mt-4 rounded-[2rem] border-2 border-primary/40 bg-card p-5 shadow-soft animate-rise">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {presets.map((p) => {
-          const active = person.name === p.name && person.art === p.art;
-          const img = personImage(p.art);
-          return (
-            <button
-              key={p.name}
-              type="button"
-              onClick={() => onPick(p)}
-              aria-pressed={active}
-              className={
-                "flex flex-col items-center gap-1 rounded-2xl border-2 p-3 transition-all active:scale-95 " +
-                (active ? "border-primary bg-blush" : "border-border bg-background hover:border-primary/50")
-              }
-            >
-              <span className="flex size-12 items-center justify-center overflow-hidden rounded-full bg-muted text-2xl">
-                {img ? <img src={img} alt="" width={816} height={816} loading="lazy" className="size-full object-cover" /> : <span aria-hidden>{p.art}</span>}
-              </span>
-              <span className="text-base font-bold">{p.name}</span>
-            </button>
-          );
-        })}
-      </div>
-      <FieldLabel htmlFor="person-custom-name">Eller skriv et navn</FieldLabel>
-      <Input
-        id="person-custom-name"
-        value={person.name}
-        onChange={(e) => onName(e.target.value)}
-        placeholder="Fx Bedste"
-        maxLength={60}
-        className={fieldClass}
-      />
-      <Button variant="gift" size="big" className="mt-4 w-full" onClick={onDone}>
-        <Check /> Sådan!
-      </Button>
-    </section>
+    <div ref={box} className={"relative " + (align === "right" ? "justify-self-end" : "justify-self-start")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={`${label}: ${person.name}. Tryk for at skifte person.`}
+        className={
+          "flex flex-col items-center gap-0.5 rounded-2xl p-1 transition-colors active:scale-95 " +
+          (open ? " bg-secondary" : "")
+        }
+      >
+        <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
+        <span className="relative flex size-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush text-3xl shadow-soft">
+          {img ? (
+            <img src={img} alt="" width={816} height={816} className="size-full object-cover" />
+          ) : (
+            <span aria-hidden>{person.art}</span>
+          )}
+          <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <ChevronDown className="size-3.5" />
+          </span>
+        </span>
+        <span className="max-w-24 truncate text-base font-bold">{person.name}</span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label={label === "FRA" ? "Vælg hvem gaven er fra" : "Vælg hvem gaven skal til"}
+          className={
+            "absolute top-full z-50 mt-2 max-h-72 w-60 overflow-y-auto rounded-3xl border border-primary/15 bg-card p-2 shadow-soft animate-rise " +
+            (align === "right" ? "right-0" : "left-0")
+          }
+        >
+          {presets.map((p) => {
+            const active = person.name === p.name && person.art === p.art;
+            const pimg = personImage(p.art);
+            return (
+              <button
+                key={p.name}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => onPick(p)}
+                className={
+                  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-lg font-bold transition-colors active:scale-[0.98] " +
+                  (active ? "bg-blush text-secondary-foreground" : "hover:bg-muted")
+                }
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xl">
+                  {pimg ? (
+                    <img
+                      src={pimg}
+                      alt=""
+                      width={816}
+                      height={816}
+                      loading="lazy"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span aria-hidden>{p.art}</span>
+                  )}
+                </span>
+                {p.name}
+                {active && <Check className="ml-auto size-5 shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

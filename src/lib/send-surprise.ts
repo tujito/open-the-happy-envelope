@@ -84,3 +84,40 @@ export function joinNames(names: string[]) {
   if (n.length <= 1) return n[0] ?? "";
   return `${n.slice(0, -1).join(", ")} og ${n[n.length - 1]}`;
 }
+
+/** art: "bedstemor" | "barnebarn" use the drawn portraits; anything else is an emoji. */
+export type Person = { name: string; art: string };
+
+function person(name: string, art: string): Person {
+  return { name, art };
+}
+
+/** Who the gift can be from – the list under the left icon. */
+export const FROM_PEOPLE: Person[] = [
+  person("Morfar", "👴🏻"),
+  person("Mormor", "👵🏻"),
+  person("Bedstemor", "bedstemor"),
+  person("Bedstefar", "🧓🏻"),
+  person("Moster", "👩🏻‍🦰"),
+  person("Onkel", "🧔🏻"),
+  person("Ven", "🫶"),
+  person("Mor", "👩🏻"),
+  person("Far", "👨🏻"),
+];
+
+/** Who the gift can be to – the list under the right icon. */
+export const TO_PEOPLE: Person[] = [
+  person("Barnebarn", "barnebarn"),
+  person("Nevø", "👦🏻"),
+  person("Niece", "👧🏻"),
+  person("Ven", "🫶"),
+  person("Mor", "👩🏻"),
+  person("Far", "👨🏻"),
+  person("Bedstemor", "bedstemor"),
+  person("Morfar", "👴🏻"),
+  person("Moster", "👩🏻‍🦰"),
+  person("Onkel", "🧔🏻"),
+];
+
+export const DEFAULT_FROM = person("Bedstemor", "bedstemor");
+export const DEFAULT_TO = person("Barnebarn", "barnebarn");
