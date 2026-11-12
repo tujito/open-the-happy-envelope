@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LavRouteImport } from './routes/lav'
+import { Route as MedIdRouteImport } from './routes/med.$id'
+import { Route as TilIdRouteImport } from './routes/til.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,49 @@ const LavRoute = LavRouteImport.update({
   path: '/lav',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MedIdRoute = MedIdRouteImport.update({
+  id: '/med/$id',
+  path: '/med/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TilIdRoute = TilIdRouteImport.update({
+  id: '/til/$id',
+  path: '/til/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/lav': typeof LavRoute
+  '/med/$id': typeof MedIdRoute
+  '/til/$id': typeof TilIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/lav': typeof LavRoute
+  '/med/$id': typeof MedIdRoute
+  '/til/$id': typeof TilIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/lav': typeof LavRoute
+  '/med/$id': typeof MedIdRoute
+  '/til/$id': typeof TilIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lav'
+  fullPaths: '/' | '/lav' | '/med/$id' | '/til/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lav'
-  id: '__root__' | '/' | '/lav'
+  to: '/' | '/lav' | '/med/$id' | '/til/$id'
+  id: '__root__' | '/' | '/lav' | '/med/$id' | '/til/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LavRoute: typeof LavRoute
+  MedIdRoute: typeof MedIdRoute
+  TilIdRoute: typeof TilIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +85,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LavRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/med/$id': {
+      id: '/med/$id'
+      path: '/med/$id'
+      fullPath: '/med/$id'
+      preLoaderRoute: typeof MedIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/til/$id': {
+      id: '/til/$id'
+      path: '/til/$id'
+      fullPath: '/til/$id'
+      preLoaderRoute: typeof TilIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LavRoute: LavRoute,
+  MedIdRoute: MedIdRoute,
+  TilIdRoute: TilIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
