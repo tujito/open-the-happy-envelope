@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Copy, Heart, MessageCircle, Send, Share2, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import giftImage from "@/assets/tujito-gift.png";
@@ -218,8 +218,13 @@ function Hint({ children }: { children: React.ReactNode }) {
 
 function Preview({ name, occasion, greeting }: { name: string; occasion: OccasionId; greeting: GreetingDraft }) {
   const o = getOccasion(occasion);
-  const mediaUrl = useMemo(() => (greeting.file ? URL.createObjectURL(greeting.file) : null), [greeting.file]);
-  useEffect(() => () => void (mediaUrl && URL.revokeObjectURL(mediaUrl)), [mediaUrl]);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!greeting.file) return setMediaUrl(null);
+    const u = URL.createObjectURL(greeting.file);
+    setMediaUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [greeting.file]);
 
   return (
     <div className="relative overflow-hidden rounded-[2rem] border-2 border-border bg-card shadow-gift animate-pop">
