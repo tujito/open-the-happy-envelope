@@ -45,25 +45,6 @@ const MY_PERSON_KEY = "tujito-mit-person";
 const fieldClass =
   "h-14 rounded-2xl border-2 bg-background px-4 text-xl md:text-xl shadow-none focus-visible:ring-2";
 
-/** art: "bedstemor" | "barnebarn" use the drawn portraits; anything else is an emoji. */
-type Person = { name: string; art: string };
-
-const FROM_PRESETS: Person[] = [
-  { name: "Bedstemor", art: "bedstemor" },
-  { name: "Morfar", art: "👴🏻" },
-  { name: "Mormor", art: "👵🏻" },
-  { name: "Moster", art: "👩🏻" },
-  { name: "Onkel", art: "🧔🏻" },
-  { name: "Ven", art: "🫶" },
-];
-
-const TO_PRESETS: Person[] = [
-  { name: "Barnebarn", art: "barnebarn" },
-  { name: "Nevø", art: "👦🏻" },
-  { name: "Niece", art: "👧🏻" },
-  { name: "Ven", art: "🫶" },
-];
-
 function personImage(art: string) {
   if (art === "bedstemor") return avatarBedstemor;
   if (art === "barnebarn") return avatarBarnebarn;
@@ -173,25 +154,6 @@ function SendSurprise() {
           />
         </div>
       </div>
-
-      {/* Person-vælger */}
-      {picker && (
-        <PersonPicker
-          key={picker}
-          title={picker === "from" ? "Hvem er gaven fra?" : "Hvem skal have gaven?"}
-          presets={picker === "from" ? FROM_PRESETS : TO_PRESETS}
-          person={picker === "from" ? from : to}
-          onPick={(p) => {
-            if (picker === "from") setFrom(p);
-            else setTo(p);
-          }}
-          onName={(name) => {
-            if (picker === "from") setFrom({ ...from, name });
-            else setTo({ ...to, name });
-          }}
-          onDone={() => setPicker(null)}
-        />
-      )}
 
       {/* Skabeloner – vandret scroll */}
       <section aria-label="Vælg overraskelse" className="mt-5">
