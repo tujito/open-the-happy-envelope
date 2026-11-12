@@ -28,3 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- Tujito data (`tujitos`, `tujito_greetings`) has RLS on with no policies; all reads/writes go through server functions in `src/lib/tujito.functions.ts` using the admin client. Why: there are no accounts, so possession of the link (an unguessable id) is the only access check, and the phone number must never reach the browser.
+- Video/voice files live in the private `tujito-media` bucket under `uploads/<uuid>.<ext>`; the browser uploads via server-issued signed upload URLs and recipients get signed read URLs. Why: no public bucket and no storage policies needed.
