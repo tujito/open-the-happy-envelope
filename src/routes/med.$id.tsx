@@ -48,7 +48,7 @@ export const Route = createFileRoute("/med/$id")({
 
 function JoinTujito() {
   const teaser = Route.useLoaderData();
-  const firstName = teaser.recipientName.split(" ")[0];
+  const firstName = teaser.recipientName.split(" ")[0] ?? teaser.recipientName;
   const occasion = getOccasion(teaser.occasion);
   const [greeting, setGreeting] = useState<GreetingDraft>(emptyGreeting);
   const [sending, setSending] = useState(false);

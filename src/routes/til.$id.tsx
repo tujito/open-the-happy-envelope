@@ -48,7 +48,7 @@ function RecipientView() {
   const [opened, setOpened] = useState<Opened | null>(null);
   const [failed, setFailed] = useState(false);
   const occasion = getOccasion(teaser.occasion);
-  const firstName = teaser.recipientName.split(" ")[0];
+  const firstName = teaser.recipientName.split(" ")[0] ?? teaser.recipientName;
 
   async function open() {
     setOpening(true);

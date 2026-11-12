@@ -20,7 +20,7 @@ const idSchema = z.object({ id: z.string().uuid() });
 /** Signed links must point at the address the visitor's browser can reach. */
 function toBrowserUrl(url: string) {
   const serverBase = process.env["SUPABASE_URL"]?.replace(/\/+$/, "");
-  const publicBase = (process.env["VITE_SUPABASE_URL"] ?? import.meta.env.VITE_SUPABASE_URL)?.replace(/\/+$/, "");
+  const publicBase = (process.env["VITE_SUPABASE_URL"] ?? import.meta.env["VITE_SUPABASE_URL"])?.replace(/\/+$/, "");
   if (serverBase && publicBase && serverBase !== publicBase && url.startsWith(serverBase)) {
     return publicBase + url.slice(serverBase.length);
   }
