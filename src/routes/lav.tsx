@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, ChevronDown, Copy, Heart, MessageCircle, Send, Share2, Users } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import avatarBarnebarn from "@/assets/avatar-barnebarn.png";
@@ -11,12 +11,17 @@ import { GreetingComposer, emptyGreeting, type GreetingDraft } from "@/component
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  DEFAULT_FROM,
+  DEFAULT_TO,
+  FROM_PEOPLE,
   SURPRISE_TEMPLATES,
+  TO_PEOPLE,
   canSendSurprise,
   columnsFilled,
   getTemplate,
   greetingFromTemplate,
   joinNames,
+  type Person,
 } from "@/lib/send-surprise";
 import { createTujito } from "@/lib/tujito.functions";
 import { joinLink, recipientLink, shareLink, smsHref } from "@/lib/tujito";
@@ -66,8 +71,8 @@ function personImage(art: string) {
 }
 
 function SendSurprise() {
-  const [from, setFrom] = useState<Person>(FROM_PRESETS[0]!);
-  const [to, setTo] = useState<Person>(TO_PRESETS[0]!);
+  const [from, setFrom] = useState<Person>(DEFAULT_FROM);
+  const [to, setTo] = useState<Person>(DEFAULT_TO);
   const [picker, setPicker] = useState<"from" | "to" | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<GreetingDraft>(emptyGreeting);
@@ -143,16 +148,28 @@ function SendSurprise() {
           <PersonButton
             label="FRA"
             person={from}
+            presets={FROM_PEOPLE}
             open={picker === "from"}
-            onClick={() => setPicker(picker === "from" ? null : "from")}
+            onToggle={() => setPicker(picker === "from" ? null : "from")}
+            onClose={() => setPicker(null)}
+            onPick={(p) => {
+              setFrom(p);
+              setPicker(null);
+            }}
           />
           <p className="pt-6 text-center font-display text-4xl font-semibold text-gift">Tujito?</p>
           <PersonButton
             label="TIL"
             person={to}
+            presets={TO_PEOPLE}
             align="right"
             open={picker === "to"}
-            onClick={() => setPicker(picker === "to" ? null : "to")}
+            onToggle={() => setPicker(picker === "to" ? null : "to")}
+            onClose={() => setPicker(null)}
+            onPick={(p) => {
+              setTo(p);
+              setPicker(null);
+            }}
           />
         </div>
       </div>
