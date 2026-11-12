@@ -250,3 +250,21 @@
     animation: none;
   }
 }
+
+@utility animate-confetti {
+  animation: tujito-confetti 2.6s cubic-bezier(0.22, 0.8, 0.4, 1) both;
+}
+
+@keyframes tujito-confetti {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.4);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1);
+  }
+}
