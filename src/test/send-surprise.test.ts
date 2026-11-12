@@ -44,4 +44,39 @@ describe("Send surprise", () => {
   it("stays inactive without the recipient's phone number", () => {
     expect(canSendSurprise({ ...complete, recipientPhone: "1234" })).toBe(false);
   });
+
+  it("the left list shows who the gift is from, in this order", () => {
+    expect(FROM_PEOPLE.map((p) => p.name)).toEqual([
+      "Morfar",
+      "Mormor",
+      "Bedstemor",
+      "Bedstefar",
+      "Moster",
+      "Onkel",
+      "Ven",
+      "Mor",
+      "Far",
+    ]);
+  });
+
+  it("the right list shows who the gift is to, in this order", () => {
+    expect(TO_PEOPLE.map((p) => p.name)).toEqual([
+      "Barnebarn",
+      "Nevø",
+      "Niece",
+      "Ven",
+      "Mor",
+      "Far",
+      "Bedstemor",
+      "Morfar",
+      "Moster",
+      "Onkel",
+    ]);
+  });
+
+  it("every person in both lists has a picture or emoji", () => {
+    for (const p of [...FROM_PEOPLE, ...TO_PEOPLE]) {
+      expect(p.art.trim().length).toBeGreaterThan(0);
+    }
+  });
 });
