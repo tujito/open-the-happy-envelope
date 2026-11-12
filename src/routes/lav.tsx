@@ -331,18 +331,31 @@ function SendSurprise() {
           {triedSend && !template && <Hint>Tryk på en</Hint>}
         </section>
 
-        {/* Højre: Til */}
-        <section aria-label="Til" className={columnClass}>
-          <ColumnTitle>Til</ColumnTitle>
+        {/* Højre: tilføj modtager */}
+        <section aria-label="Modtager" className={columnClass}>
           <Dropdown open={panel === "col-to"} onClose={close}>
-            <AvatarButton
-              caption="MODTAGER"
-              art={to.art}
-              name={to.name}
-              expanded={panel === "col-to"}
-              ariaLabel={`Modtager: ${to.name}. Tryk for at skifte person eller nummer.`}
+            <button
+              type="button"
               onClick={() => toggle("col-to")}
-            />
+              aria-expanded={panel === "col-to"}
+              aria-haspopup="dialog"
+              aria-label="Tilføj modtager. Tryk for at vælge en modtager eller skrive et telefon- eller SMS-nummer."
+              className="flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors active:scale-95"
+            >
+              <span
+                className={
+                  "flex size-16 items-center justify-center rounded-full border-2 border-dashed bg-background transition-colors " +
+                  (filled.to ? "border-primary bg-blush text-primary" : "border-primary/60 text-primary")
+                }
+              >
+                <Plus className="size-7" />
+              </span>
+              <span className="text-center text-sm font-bold leading-tight text-primary">
+                Tilføj
+                <br />
+                modtager
+              </span>
+            </button>
             {panel === "col-to" && (
               <PanelBox label="Vælg hvem gaven skal til" align="right">
                 <div className="p-2">
@@ -366,22 +379,18 @@ function SendSurprise() {
                     <Check /> Færdig
                   </Button>
                 </div>
-                <p className="px-3 pb-1 pt-3 text-base font-bold text-muted-foreground">Eller vælg en anden</p>
+                <p className="px-3 pb-1 pt-3 text-base font-bold text-muted-foreground">Eller vælg en modtager</p>
                 <PeopleList people={TO_PEOPLE} selected={to} onPick={setTo} />
               </PanelBox>
             )}
           </Dropdown>
-          <button
-            type="button"
-            onClick={() => toggle("col-to")}
-            className={
-              "-mt-2 rounded-xl px-1 text-center text-base font-semibold leading-tight " +
-              (filled.to ? "text-muted-foreground" : "text-primary" + (triedSend ? " animate-pulse" : ""))
-            }
-          >
-            {recipientPhone.trim() ? recipientPhone : "Tryk og skriv nummer"}
-          </button>
-          {triedSend && recipientPhone.trim() && !filled.to && <Hint>Skriv 8 cifre</Hint>}
+          {recipientPhone.trim() && (
+            <p className="px-1 text-center text-base font-bold leading-tight text-foreground">
+              {to.name}
+              <span className="block font-semibold text-muted-foreground">{recipientPhone}</span>
+            </p>
+          )}
+          {triedSend && !filled.to && <Hint>Tilføj en modtager</Hint>}
         </section>
       </div>
 
