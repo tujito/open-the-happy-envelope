@@ -181,9 +181,9 @@ function SendSurprise() {
 
   return (
     <div className="mx-auto flex min-h-page w-full max-w-2xl flex-col px-4 pb-8 sm:px-6">
-      {/* Fast top-bar: FRA – Tujito? – TIL */}
+      {/* Fast top-bar: FRA – Tujito? – TIL. Same 3-column grid as below, so everything lines up. */}
       <div className="sticky top-0 z-40 -mx-4 rounded-b-[1.75rem] bg-nav px-4 pb-3 pt-3 shadow-soft sm:-mx-6 sm:px-6">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start">
+        <div className={"relative " + gridClass + " items-start"}>
           <PersonButton
             label="FRA"
             person={from}
@@ -196,7 +196,9 @@ function SendSurprise() {
               close();
             }}
           />
-          <p className="pt-6 text-center font-display text-4xl font-semibold text-gift">Tujito?</p>
+          <p className="justify-self-center pt-6 text-center font-display text-3xl font-semibold text-gift sm:text-4xl">
+            Tujito?
+          </p>
           <PersonButton
             label="TIL"
             person={to}
@@ -214,12 +216,12 @@ function SendSurprise() {
       </div>
 
       {/* 3 kolonner: Dig – Overraskelse – Tilføj modtager */}
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-        {/* Venstre: dig selv og medsendere */}
+      <div className={"mt-4 " + gridClass}>
+        {/* Venstre: dig selv og medsendere – under FRA */}
         <section aria-label="Dig og medsendere" className={columnClass}>
+          <p className={headSlot + " text-xs font-bold tracking-widest text-muted-foreground"}>DIG</p>
           <Dropdown open={panel === "me"} onClose={close}>
             <AvatarButton
-              caption="DIG"
               photo={me.photo}
               art="🙂"
               name={myName}
@@ -235,38 +237,37 @@ function SendSurprise() {
           </Dropdown>
 
           {coSenders.map((c) => (
-            <div key={c.name} className="relative flex flex-col items-center gap-0.5 p-1 animate-pop">
-              <span className="text-xs font-bold tracking-widest text-muted-foreground">MED</span>
-              <Avatar art={c.art} />
-              <span className="max-w-full truncate text-base font-bold">{c.name}</span>
-              <button
-                type="button"
-                onClick={() => setCoSenders((list) => list.filter((x) => x.name !== c.name))}
-                aria-label={`Fjern ${c.name}`}
-                className="absolute right-0 top-4 flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-muted-foreground active:scale-90"
-              >
-                <X className="size-4" />
-              </button>
+            <div key={c.name} className="relative flex w-full flex-col items-center gap-1 animate-pop">
+              <span className="relative">
+                <Avatar art={c.art} />
+                <button
+                  type="button"
+                  onClick={() => setCoSenders((list) => list.filter((x) => x.name !== c.name))}
+                  aria-label={`Fjern ${c.name}`}
+                  className="absolute -right-2 -top-1 flex size-6 items-center justify-center rounded-full border-2 border-card bg-muted text-muted-foreground active:scale-90"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </span>
+              <span className={labelSlot + " text-base font-bold"}>
+                <span className="truncate">{c.name}</span>
+              </span>
             </div>
           ))}
 
           <Dropdown open={panel === "co"} onClose={close}>
-            <button
-              type="button"
+            <PlusButton
+              label={
+                <>
+                  Tilføj
+                  <br />
+                  medsender
+                </>
+              }
+              expanded={panel === "co"}
+              ariaLabel="Tilføj medsender"
               onClick={() => toggle("co")}
-              aria-expanded={panel === "co"}
-              aria-haspopup="listbox"
-              className="flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors active:scale-95"
-            >
-              <span className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-background text-primary">
-                <Plus className="size-7" />
-              </span>
-              <span className="text-center text-sm font-bold leading-tight text-primary">
-                Tilføj
-                <br />
-                medsender
-              </span>
-            </button>
+            />
             {panel === "co" && (
               <PanelBox label="Vælg en medsender">
                 <p className="px-3 pb-1 pt-2 text-base font-bold">Hvem sender med?</p>
@@ -282,14 +283,14 @@ function SendSurprise() {
           </Dropdown>
         </section>
 
-        {/* Midten: Overraskelser – lodret scroll */}
+        {/* Midten: Overraskelser – lodret scroll, under Tujito? */}
         <section aria-label="Vælg overraskelse" className={columnClass}>
-          <ColumnTitle>Overraskelse</ColumnTitle>
-          <div className="relative w-full min-h-64 flex-1">
+          <h2 className={headSlot + " font-sans text-sm font-bold text-foreground sm:text-base"}>Overraskelse</h2>
+          <div className="relative w-full min-h-72 flex-1">
             <div
               role="radiogroup"
               aria-label="Overraskelser"
-              className="absolute inset-0 flex snap-y flex-col items-center gap-3 overflow-y-auto overscroll-contain pb-8 pt-1"
+              className="absolute inset-0 flex snap-y flex-col items-center gap-3 overflow-y-auto overscroll-contain pb-8"
             >
               {SURPRISE_TEMPLATES.map((t) => {
                 const active = templateId === t.id;
@@ -300,24 +301,23 @@ function SendSurprise() {
                     role="radio"
                     aria-checked={active}
                     onClick={() => chooseTemplate(t.id)}
-                    className="flex shrink-0 snap-start flex-col items-center gap-1 rounded-2xl p-1 transition-transform active:scale-95"
+                    className="flex w-full shrink-0 snap-start flex-col items-center gap-1 rounded-2xl transition-transform active:scale-95"
                   >
                     <span
                       className={
-                        "relative flex size-16 items-center justify-center rounded-full border-2 text-3xl transition-all " +
-                        (active
-                          ? "border-primary bg-blush shadow-gift ring-4 ring-primary/25"
-                          : "border-border bg-muted")
+                        iconClass +
+                        " relative border-2 text-2xl transition-all " +
+                        (active ? "border-primary bg-blush shadow-gift ring-4 ring-primary/25" : "border-border bg-muted")
                       }
                     >
                       <span aria-hidden>{t.emoji}</span>
                       {active && (
-                        <span className="absolute -right-1 -top-1 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
-                          <Check className="size-3.5" />
+                        <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground animate-pop">
+                          <Check className="size-3" />
                         </span>
                       )}
                     </span>
-                    <span className={"text-base font-bold " + (active ? "text-primary" : "text-foreground")}>
+                    <span className={labelSlot + " text-base font-bold " + (active ? "text-primary" : "text-foreground")}>
                       {t.title}
                     </span>
                   </button>
@@ -331,31 +331,23 @@ function SendSurprise() {
           {triedSend && !template && <Hint>Tryk på en</Hint>}
         </section>
 
-        {/* Højre: tilføj modtager */}
+        {/* Højre: tilføj modtager – under TIL */}
         <section aria-label="Modtager" className={columnClass}>
+          <span aria-hidden className={headSlot} />
           <Dropdown open={panel === "col-to"} onClose={close}>
-            <button
-              type="button"
+            <PlusButton
+              label={
+                <>
+                  Tilføj
+                  <br />
+                  modtager
+                </>
+              }
+              filled={filled.to}
+              expanded={panel === "col-to"}
+              ariaLabel="Tilføj modtager. Tryk for at vælge en modtager eller skrive et telefon- eller SMS-nummer."
               onClick={() => toggle("col-to")}
-              aria-expanded={panel === "col-to"}
-              aria-haspopup="dialog"
-              aria-label="Tilføj modtager. Tryk for at vælge en modtager eller skrive et telefon- eller SMS-nummer."
-              className="flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors active:scale-95"
-            >
-              <span
-                className={
-                  "flex size-16 items-center justify-center rounded-full border-2 border-dashed bg-background transition-colors " +
-                  (filled.to ? "border-primary bg-blush text-primary" : "border-primary/60 text-primary")
-                }
-              >
-                <Plus className="size-7" />
-              </span>
-              <span className="text-center text-sm font-bold leading-tight text-primary">
-                Tilføj
-                <br />
-                modtager
-              </span>
-            </button>
+            />
             {panel === "col-to" && (
               <PanelBox label="Vælg hvem gaven skal til" align="right">
                 <div className="p-2">
@@ -466,8 +458,12 @@ function SendSurprise() {
   );
 }
 
+/** The top bar and the 3 columns share this grid, so each column sits exactly under its top-bar item. */
+const gridClass = "grid grid-cols-3 gap-2 sm:gap-4";
 const columnClass =
-  "flex min-w-0 flex-col items-center rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-3 shadow-soft";
+  "flex min-w-0 flex-col items-center gap-3 rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-2 shadow-soft";
+/** Every round icon in the 3 columns (and the top bar) has exactly this size. */
+const iconClass = "flex size-12 shrink-0 items-center justify-center rounded-full";
 
 /** Fixed-height slots so every icon in the 3 columns lands on the same lines. */
 const headSlot = "flex h-8 w-full items-center justify-center";
@@ -479,16 +475,12 @@ function greetingSummary(g: GreetingDraft) {
   return g.message.trim() || "Skriv et par ord";
 }
 
-function ColumnTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-center text-base font-bold leading-tight text-foreground sm:text-lg">{children}</h2>;
-}
-function Avatar({ art, photo, big }: { art: string; photo?: string | null | undefined; big?: boolean }) {
+function Avatar({ art, photo }: { art: string; photo?: string | null | undefined }) {
   const img = photo ?? personImage(art);
   return (
     <span
       className={
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-blush shadow-soft " +
-        (big ? "size-16 text-3xl" : "size-12 text-2xl")
+        iconClass + " relative overflow-hidden border-2 border-primary/40 bg-blush text-2xl shadow-soft"
       }
     >
       {img ? (
@@ -529,11 +521,13 @@ function AvatarButton({
     >
       <span className="relative">
         <Avatar art={art} photo={photo} />
-        <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <ChevronDown className="size-3" />
+        <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <ChevronDown className="size-3.5" />
         </span>
       </span>
-      <span className={labelSlot + " text-base font-bold"}>{name}</span>
+      <span className={labelSlot + " text-base font-bold"}>
+        <span className="truncate">{name}</span>
+      </span>
     </button>
   );
 }
@@ -546,7 +540,7 @@ function PlusButton({
   ariaLabel,
   onClick,
 }: {
-  label: string;
+  label: ReactNode;
   expanded: boolean;
   filled?: boolean;
   ariaLabel: string;
@@ -563,7 +557,7 @@ function PlusButton({
     >
       <span
         className={
-          "flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-dashed bg-background transition-colors " +
+          iconClass + " border-2 border-dashed bg-background transition-colors " +
           (filled ? "border-primary bg-blush text-primary" : "border-primary/60 text-primary")
         }
       >
@@ -579,7 +573,7 @@ function Dropdown({ open, onClose, children }: { open: boolean; onClose: () => v
   const box = useRef<HTMLDivElement>(null);
   useCloseOutside(box, open, onClose);
   return (
-    <div ref={box} className="relative flex max-w-full flex-col items-center">
+    <div ref={box} className="relative flex w-full flex-col items-center">
       {children}
     </div>
   );
@@ -718,7 +712,7 @@ function PersonButton({
   useCloseOutside(box, open, onClose);
 
   return (
-    <div ref={box} className={"relative " + (align === "right" ? "justify-self-end" : "justify-self-start")}>
+    <div ref={box} className="justify-self-center">
       <button
         type="button"
         onClick={onToggle}
@@ -733,7 +727,7 @@ function PersonButton({
         <span className="text-xs font-bold tracking-widest text-muted-foreground">{label}</span>
         <span className="relative">
           <Avatar art={person.art} />
-          <span className="absolute bottom-0 right-0 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <ChevronDown className="size-3.5" />
           </span>
         </span>
