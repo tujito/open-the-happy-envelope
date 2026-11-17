@@ -40,6 +40,13 @@ export const SURPRISE_TEMPLATES: SurpriseTemplate[] = [
     kind: "text",
     message: "Har du tid til en kop kaffe snart? Jeg giver – og jeg glæder mig til at se dig.",
   },
+  {
+    id: "drink",
+    title: "Drink",
+    emoji: "🍹",
+    kind: "text",
+    message: "En kold drink til dig – skål! Jeg håber, du får en hyggelig aften.",
+  },
 ];
 
 export function getTemplate(id: string | null) {
