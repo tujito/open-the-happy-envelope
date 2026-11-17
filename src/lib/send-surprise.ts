@@ -20,13 +20,6 @@ export const SURPRISE_TEMPLATES: SurpriseTemplate[] = [
     message: "Et stort, varmt knus til dig – bare fordi vi holder så meget af dig.",
   },
   {
-    id: "sang",
-    title: "Sang",
-    emoji: "🎵",
-    kind: "audio",
-    message: "En lille sang, kun til dig.",
-  },
-  {
     id: "varm-hilsen",
     title: "Hilsen",
     emoji: "💌",

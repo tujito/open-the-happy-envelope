@@ -20,8 +20,9 @@ const complete: SurpriseForm = {
 };
 
 describe("Send surprise", () => {
-  it("offers the five round surprise icons in order", () => {
-    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual(["Knus", "Sang", "Hilsen", "Minde", "Kaffe"]);
+  it("offers the four round surprise icons in order", () => {
+    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual(["Knus", "Hilsen", "Minde", "Kaffe"]);
+    expect(SURPRISE_TEMPLATES.some((t) => t.title === "Sang" || t.emoji === "🎵")).toBe(false);
   });
 
   it("the button is active when all three parts are filled", () => {
