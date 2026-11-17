@@ -14,6 +14,7 @@ export const OCCASIONS = [
   { id: "sang", label: "En sang", emoji: "🎵", headline: "En sang til dig!" },
   { id: "minde", label: "Et minde", emoji: "📸", headline: "Et minde til dig!" },
   { id: "kaffe", label: "En kop kaffe", emoji: "☕", headline: "En kop kaffe til dig!" },
+  { id: "drink", label: "En drink", emoji: "🍹", headline: "En drink til dig!" },
 ] as const;
 
 export type OccasionId = (typeof OCCASIONS)[number]["id"];

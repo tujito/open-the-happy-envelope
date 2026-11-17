@@ -20,8 +20,14 @@ const complete: SurpriseForm = {
 };
 
 describe("Send surprise", () => {
-  it("offers the four round surprise icons in order", () => {
-    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual(["Knus", "Hilsen", "Minde", "Kaffe"]);
+  it("offers the round surprise icons in order", () => {
+    expect(SURPRISE_TEMPLATES.map((t) => t.title)).toEqual([
+      "Knus",
+      "Hilsen",
+      "Minde",
+      "Kaffe",
+      "Drink",
+    ]);
     expect(SURPRISE_TEMPLATES.some((t) => t.title === "Sang" || t.emoji === "🎵")).toBe(false);
   });
 
