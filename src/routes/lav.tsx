@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Camera, Check, ChevronDown, Copy, Heart, MessageCircle, PenLine, Plus, Send, Share2, Users, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Copy, Heart, MessageCircle, PenLine, Plus, Search, Send, Share2, Smartphone, Users, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 
@@ -364,6 +364,21 @@ function SendSurprise() {
               </PanelBox>
             )}
           </Dropdown>
+
+          <button
+            type="button"
+            onClick={() => toggle("col-to")}
+            aria-label="Søg efter en modtager"
+            className="flex w-full flex-col items-center rounded-2xl transition-colors active:scale-95"
+          >
+            <span className={iconClass + " border-2 border-primary/40 bg-blush text-primary"}>
+              <span className="relative flex items-center justify-center">
+                <Smartphone className="size-9" />
+                <Search className="absolute size-4" />
+              </span>
+            </span>
+          </button>
+
           {recipientPhone.trim() && (
             <p className="px-1 text-center text-base font-bold leading-tight text-foreground">
               {to.name}
@@ -447,7 +462,7 @@ function SendSurprise() {
 }
 
 /** The top bar and the 3 columns share this grid, so each column sits exactly under its top-bar item. */
-const gridClass = "grid grid-cols-3 gap-2 sm:gap-4";
+const gridClass = "grid grid-cols-[1fr_2fr_1fr] gap-2 sm:gap-4";
 const columnClass =
   "flex min-w-0 flex-col items-center gap-3 rounded-[1.75rem] border-2 border-border bg-card px-1 pb-3 pt-2 shadow-soft";
 /** Every round icon in the 3 columns (and the top bar) has exactly this size. */
