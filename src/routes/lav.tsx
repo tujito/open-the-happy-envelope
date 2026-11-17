@@ -138,7 +138,7 @@ function SendSurprise() {
   const filled = columnsFilled(form);
   const ready = canSendSurprise(form);
   const template = getTemplate(templateId);
-  const myName = me.nick.trim() || "Dig";
+  const myName = me.nick.trim() || "MyNick";
 
   function chooseTemplate(id: string) {
     if (id === templateId) {
@@ -219,14 +219,14 @@ function SendSurprise() {
       <div className={"mt-4 " + gridClass}>
         {/* Venstre: dig selv og medsendere – under FRA */}
         <section aria-label="Dig og medsendere" className={columnClass}>
-          <p className={headSlot + " text-xs font-bold tracking-widest text-muted-foreground"}>DIG</p>
+          <p className={headSlot + " text-xs font-bold tracking-widest text-muted-foreground"}>MyNick</p>
           <Dropdown open={panel === "me"} onClose={close}>
             <AvatarButton
               photo={me.photo}
               art="🙂"
               name={myName}
               expanded={panel === "me"}
-              ariaLabel={`Dig: ${myName}. Tryk for at skifte navn eller billede.`}
+              ariaLabel={`${myName}. Tryk for at skifte navn eller billede.`}
               onClick={() => toggle("me")}
             />
             {panel === "me" && (
@@ -257,13 +257,7 @@ function SendSurprise() {
 
           <Dropdown open={panel === "co"} onClose={close}>
             <PlusButton
-              label={
-                <>
-                  Tilføj
-                  <br />
-                  medsender
-                </>
-              }
+              label="Tilføj"
               expanded={panel === "co"}
               ariaLabel="Tilføj medsender"
               onClick={() => toggle("co")}
@@ -336,13 +330,7 @@ function SendSurprise() {
           <span aria-hidden className={headSlot} />
           <Dropdown open={panel === "col-to"} onClose={close}>
             <PlusButton
-              label={
-                <>
-                  Tilføj
-                  <br />
-                  modtager
-                </>
-              }
+              label="Tilføj"
               filled={filled.to}
               expanded={panel === "col-to"}
               ariaLabel="Tilføj modtager. Tryk for at vælge en modtager eller skrive et telefon- eller SMS-nummer."
